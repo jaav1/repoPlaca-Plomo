@@ -243,4 +243,16 @@ public class RadialInventoryManager : MonoBehaviour
         currentPageIndex = (currentPageIndex - 1 + pageOrder.Count) % pageOrder.Count;
         RefreshInventoryUI();
     }
+
+    public bool HasItem(string itemName)
+    {
+        if (!pagedItems.ContainsKey(CurrentPage))
+            return false;
+
+        foreach (var list in pagedItems.Values)
+            if (list.Contains(itemName))
+                return true;
+
+        return false;
+    }
 }
