@@ -14,22 +14,30 @@ public class PlayerMovement : MonoBehaviour
     private Camera cam;
     private bool isGrounded;
 
+    [Header("Animacion")]
+
+    private Animator animator;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         cam = Camera.main;
+        animator = GetComponent<Animator>();
 
         if (rb == null)
             Debug.LogError("Rigidbody no encontrado en el objeto Player");
 
         if (cam == null)
-            Debug.LogError("C�mara principal no encontrada. Aseg�rate de que tenga el tag 'MainCamera'");
+            Debug.LogError("Camara principal no encontrada. Asegurate de que tenga el tag 'MainCamera'");
     }
 
     void Update()
     {
 
         isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayer);
+        animator.SetBool("isGrounded", isGrounded);
+
+        animator.SetFloat("VelocidadY", rb.linearVelocity.y);
 
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
@@ -46,6 +54,9 @@ public class PlayerMovement : MonoBehaviour
         Vector3 camRight = cam.transform.right;
 
         Vector3 moveDir = (camForward * v + camRight * h).normalized;
+
+        animator.SetFloat("Walk", moveDir.magnitude);
+
         Vector3 velocity = moveDir * moveSpeed;
         velocity.y = rb.linearVelocity.y;
 
