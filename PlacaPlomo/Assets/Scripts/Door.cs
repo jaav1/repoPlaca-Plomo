@@ -9,6 +9,9 @@ public class Door : MonoBehaviour
     public float openAngle = 90f;
     public float openSpeed = 2f;
 
+    public AudioClip openDoor;
+    public AudioClip closeDoor;
+
     private RadialInventoryManager inventory;
     private bool playerInRange = false;
 
@@ -72,6 +75,12 @@ public class Door : MonoBehaviour
             puertaVisual.localRotation = Quaternion.Slerp(rotInicial, rotFinal, t);
             yield return null;
         }
+
+        // Reproduce el sonido de abrir la puerta una vez que la animación de apertura ha terminado.
+        if (openDoor != null)
+        {
+            AudioSource.PlayClipAtPoint(openDoor, transform.position);
+        }
     }
 
     System.Collections.IEnumerator CloseRoutine()
@@ -85,6 +94,12 @@ public class Door : MonoBehaviour
             t += Time.deltaTime * openSpeed;
             puertaVisual.localRotation = Quaternion.Slerp(rotInicial, rotFinal, t);
             yield return null;
+        }
+
+        // Reproduce el sonido de cerrar la puerta una vez que la animación de cierre ha terminado.
+        if (closeDoor != null)
+        {
+            AudioSource.PlayClipAtPoint(closeDoor, transform.position);
         }
     }
 

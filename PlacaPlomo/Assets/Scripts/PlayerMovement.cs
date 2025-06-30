@@ -10,6 +10,10 @@ public class PlayerMovement : MonoBehaviour
     public float groundCheckRadius = 0.2f;
     public float rotationSmoothSpeed = 3f;
 
+    public AudioSource pasos;
+    private bool Hactivo;
+    private bool Vactivo;
+
     private Rigidbody rb;
     private Camera cam;
     private bool isGrounded;
@@ -43,6 +47,38 @@ public class PlayerMovement : MonoBehaviour
         {
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
+
+        if (Input.GetButtonDown("Horizontal"))
+        {
+            Hactivo = true;
+            pasos.Play();
+        }
+
+        if (Input.GetButtonDown("Vertical"))
+        {
+            Vactivo = true;
+            pasos.Play();
+        }
+
+        if (Input.GetButtonUp("Horizontal"))
+        {
+            Hactivo = false;
+            if (Vactivo == false)
+            {
+                pasos.Pause();
+            }
+        }
+
+        if (Input.GetButtonUp("Vertical"))
+        {
+            Vactivo = false;
+            if (Hactivo == false)
+            {
+                pasos.Pause();
+            }
+        }
+
+
     }
 
     void FixedUpdate()

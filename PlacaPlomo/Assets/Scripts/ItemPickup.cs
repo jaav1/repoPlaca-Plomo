@@ -1,11 +1,14 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Collider))]
 public class ItemPickup : MonoBehaviour
 {
     [Header("Configuración del ítem")]
     public string itemName = "Objeto";
     public string itemPage = "General";
+
+    [Header("Configuración de Audio")]
+    public AudioClip pickupSound; // Aquí asignaremos el sonido de recogida
+    private AudioSource audioSource; // Referencia al componente AudioSource
 
     private bool canPickup = false;
     private PickupTextUI pickupTextUI;
@@ -15,12 +18,21 @@ public class ItemPickup : MonoBehaviour
     {
         pickupTextUI = FindFirstObjectByType<PickupTextUI>();
         inventoryManager = FindFirstObjectByType<RadialInventoryManager>();
+        audioSource = GetComponent<AudioSource>(); // Obtenemos el componente AudioSource de este GameObject
 
         if (!pickupTextUI)
             Debug.LogError("[ItemPickup] pickupTextUI no se encontró en la escena.");
 
         if (!inventoryManager)
             Debug.LogError("[ItemPickup] RadialInventoryManager no se encontró en la escena.");
+
+        // Opcional: Si el AudioSource no existe, lo creamos y configuramos.
+        // Esto es útil si no quieres añadirlo manualmente en el Inspector.
+        if (!audioSource)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false; // Queremos reproducirlo cuando recojamos, no al inicio
+        }
     }
 
     void Update()
@@ -34,7 +46,20 @@ public class ItemPickup : MonoBehaviour
             if (!string.IsNullOrEmpty(itemName))
                 inventoryManager?.AddItem(itemName, itemPage);
 
-            Destroy(gameObject);
+            // --- NUEVO CÓDIGO PARA EL SONIDO ---
+            if (pickupSound != null && audioSource != null)
+            {
+                // Reproducimos el sonido. Si el AudioSource está en este GameObject,
+                // se destruirá con el ítem, lo cual está bien si el sonido es corto.
+                // Si el sonido es largo y quieres que termine de reproducirse,
+                // necesitarías un sistema de audio global o un AudioSource temporal.
+                audioSource.PlayOneShot(pickupSound);
+            }
+            // --- FIN NUEVO CÓDIGO ---
+
+            // Destruimos el objeto un poco después para permitir que el sonido se reproduzca si es corto
+            // Si el sonido es más largo, podrías necesitar otra estrategia (ver nota arriba).
+            Destroy(gameObject, 1f); // Destruye el objeto 0.1 segundos después
         }
     }
 
