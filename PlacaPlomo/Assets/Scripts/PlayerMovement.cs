@@ -1,74 +1,63 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : MonoBehaviour
 {
-    public float moveSpeed = 5f;
-    public float jumpForce = 7f;
-    public LayerMask groundLayer;
-    public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
-    public float rotationSmoothSpeed = 3f;
-
-    private Rigidbody rb;
-    private Camera cam;
-    private bool isGrounded;
+    public float speed = 2f; // Velocidad de movimiento
+    public float jumpForce = 5f; // Fuerza del salto
+    public float mouseSensitivity = 10f; // Sensibilidad del mouse
+    public Transform playerCamera; // Cámara del jugador
+    private float verticalRotation = 0f; // Rotación vertical
+    private Rigidbody rb; // Referencia al Rigidbody
+    private bool isGrounded; // Verificar si está en el suelo
 
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
-        cam = Camera.main;
-
-        if (rb == null)
-            Debug.LogError("Rigidbody no encontrado en el objeto Player");
-
-        if (cam == null)
-            Debug.LogError("Cï¿½mara principal no encontrada. Asegï¿½rate de que tenga el tag 'MainCamera'");
+        rb = GetComponent<Rigidbody>(); // Obtener el Rigidbody del jugador
+        Cursor.lockState = CursorLockMode.Locked; // Bloquear el cursor
     }
 
     void Update()
     {
+        // Movimiento horizontal
+        float horizontal = Input.GetAxis("Horizontal");
+        float vertical = Input.GetAxis("Vertical");
+        Vector3 movement = transform.right * horizontal + transform.forward * vertical;
+        transform.Translate(movement * speed * Time.deltaTime, Space.World);
 
-        isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayer);
+        // Rotación con el mouse
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
 
-        if (Input.GetButtonDown("Jump") && isGrounded)
+        verticalRotation -= mouseY;
+        verticalRotation = Mathf.Clamp(verticalRotation, -90f, 90f);
+
+        playerCamera.localRotation = Quaternion.Euler(verticalRotation, 0f, 0f);
+        transform.Rotate(Vector3.up * mouseX);
+
+        // Salto
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded) // Salta si está en el suelo
         {
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
     }
 
-    void FixedUpdate()
+    void OnCollisionEnter(Collision collision)
     {
-        float h = Input.GetAxis("Horizontal");
-        float v = Input.GetAxis("Vertical");
-
-        Vector3 camForward = Vector3.Scale(cam.transform.forward, new Vector3(1, 0, 1)).normalized;
-        Vector3 camRight = cam.transform.right;
-
-        Vector3 moveDir = (camForward * v + camRight * h).normalized;
-        Vector3 velocity = moveDir * moveSpeed;
-        velocity.y = rb.linearVelocity.y;
-
-        rb.linearVelocity = velocity;
-
-        // Este bloque evita rotaciones bruscas hacia atrÃ¡s
-        if (moveDir != Vector3.zero)
+        // Detectar si está tocando el suelo
+        if (collision.gameObject.CompareTag("Ground"))
         {
-            float dot = Vector3.Dot(moveDir, transform.forward);
-            if (dot > -0.5f) // MÃ¡s estricto para no rotar si va en direcciÃ³n contraria
-            {
-                Quaternion targetRotation = Quaternion.LookRotation(moveDir);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * rotationSmoothSpeed);
-            }
+            isGrounded = true;
         }
     }
 
-    void OnDrawGizmosSelected()
+    void OnCollisionExit(Collision collision)
     {
-        if (groundCheck != null)
+        // Detectar si dejó de tocar el suelo
+        if (collision.gameObject.CompareTag("Ground"))
         {
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+            isGrounded = false;
         }
     }
 }

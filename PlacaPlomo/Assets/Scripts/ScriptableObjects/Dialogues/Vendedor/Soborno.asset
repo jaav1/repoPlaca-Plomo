@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
+  m_Name: Soborno
+  m_EditorClassIdentifier: 
+  speakerName: Vendedor
+  dialogueText: "\xBFCargamento? No me gusta ese tono, amigo. Aqu\xED no se habla
+    de esas cosas abiertamente."
+  options:
+  - optionText: "Puedo pagar por la informaci\xF3n."
+    nextDialogue: {fileID: 11400000, guid: 6de1cae949d1b534fa06e9a63a21e5ec, type: 2}
+    confianzaDelta: 1
+    sospechaDelta: 2
+  - optionText: Entonces me obligas a hacer esto por las malas.
+    nextDialogue: {fileID: 11400000, guid: c686257847816b84a9639291e4adef19, type: 2}
+    confianzaDelta: -3
+    sospechaDelta: 3
