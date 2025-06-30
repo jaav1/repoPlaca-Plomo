@@ -7,7 +7,6 @@ TagManager:
   - Ground
   - Item
   - Door
-  - NPC
   layers:
   - Default
   - TransparentFX

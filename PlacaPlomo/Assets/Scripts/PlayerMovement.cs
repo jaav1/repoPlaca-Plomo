@@ -1,97 +1,121 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : MonoBehaviour
 {
-    public float speed = 2f; // Velocidad de movimiento
-    public float jumpForce = 5f; // Fuerza del salto
-    public float mouseSensitivity = 10f; // Sensibilidad del mouse
-    public Transform playerCamera; // Cmara del jugador
+    public float moveSpeed = 5f;
+    public float jumpForce = 7f;
+    public LayerMask groundLayer;
+    public Transform groundCheck;
+    public float groundCheckRadius = 0.2f;
+    public float rotationSmoothSpeed = 3f;
 
-    // Variables públicas para la detección de suelo (configurar en el Inspector de Unity)
-    public Transform groundCheck; // Objeto vacío que indica la posición para chequear el suelo
-    public float groundCheckRadius = 0.2f; // Radio de la esfera para chequear el suelo
-    public LayerMask groundLayer; // Capa de los objetos que consideramos "suelo"
+    public AudioSource pasos;
+    private bool Hactivo;
+    private bool Vactivo;
 
-    private float verticalRotation = 0f; // Rotacin vertical
-    private Rigidbody rb; // Referencia al Rigidbody
-    private bool isGrounded; // Verdadero si el jugador está en el suelo
-    private Camera cam; // Referencia a la cmara principal
-    private Animator animator; // Referencia al componente Animator
+    private Rigidbody rb;
+    private Camera cam;
+    private bool isGrounded;
+
+    [Header("Animacion")]
+
+    private Animator animator;
 
     void Start()
     {
-        // Obtener referencias a los componentes necesarios
         rb = GetComponent<Rigidbody>();
-        cam = Camera.main; // Busca la cámara con el tag "MainCamera"
+        cam = Camera.main;
         animator = GetComponent<Animator>();
 
-        // Validaciones para asegurar que los componentes existen
         if (rb == null)
-            Debug.LogError("Rigidbody no encontrado en el objeto Player.");
+            Debug.LogError("Rigidbody no encontrado en el objeto Player");
 
         if (cam == null)
-            Debug.LogError("Cámara principal no encontrada. Asegúrate de que tenga el tag 'MainCamera'.");
-
-        if (animator == null)
-            Debug.LogError("Animator no encontrado en el objeto Player.");
-
-        // Bloquear el cursor en el centro de la pantalla y hacerlo invisible para una experiencia de FPS
-        Cursor.lockState = CursorLockMode.Locked;
+            Debug.LogError("Camara principal no encontrada. Asegurate de que tenga el tag 'MainCamera'");
     }
 
     void Update()
     {
-        // --- Movimiento del Jugador ---
-        // Obtener inputs de movimiento
-        float horizontal = Input.GetAxis("Horizontal");
-        float vertical = Input.GetAxis("Vertical");
 
-        // Calcular el vector de movimiento basado en la dirección del jugador
-        Vector3 movement = transform.right * horizontal + transform.forward * vertical;
-        
-        // Mover al jugador
-        transform.Translate(movement * speed * Time.deltaTime, Space.World);
-
-        // --- Rotación de Cámara y Jugador (Mirada) ---
-        // Obtener inputs del mouse para la rotación
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
-
-        // Calcular la rotación vertical de la cámara (arriba/abajo)
-        verticalRotation -= mouseY;
-        verticalRotation = Mathf.Clamp(verticalRotation, -90f, 90f); // Limitar la rotación para evitar voltear la cámara
-
-        // Aplicar la rotación vertical a la cámara del jugador
-        playerCamera.localRotation = Quaternion.Euler(verticalRotation, 0f, 0f);
-        
-        // Aplicar la rotación horizontal al cuerpo del jugador
-        transform.Rotate(Vector3.up * mouseX);
-
-        // --- Detección de Suelo y Animaciones ---
-        // Usar Physics.CheckSphere para determinar si el jugador está en el suelo
-        // Esto crea una pequeña esfera en 'groundCheck' para ver si colisiona con la 'groundLayer'
         isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayer);
-        
-        // Actualizar parámetros del Animator
-        animator.SetBool("isGrounded", isGrounded); // Indica al Animator si el jugador está en el suelo
-        animator.SetFloat("VelocidadY", rb.linearVelocity.y); // Envía la velocidad vertical para animaciones de caída/salto
+        animator.SetBool("isGrounded", isGrounded);
 
-        // Calcular la magnitud del movimiento para el parámetro "Walk" del Animator
-        // Esto ayuda a activar animaciones de caminar/correr
-        Vector3 currentMoveDir = (transform.forward * vertical + transform.right * horizontal).normalized;
-        animator.SetFloat("Walk", currentMoveDir.magnitude);
+        animator.SetFloat("VelocidadY", rb.linearVelocity.y);
 
-        // --- Salto ---
-        // Detectar input de salto y si el jugador está en el suelo
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        if (Input.GetButtonDown("Jump") && isGrounded)
         {
-            // Aplicar una fuerza hacia arriba para el salto
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
+
+        if (Input.GetButtonDown("Horizontal"))
+        {
+            Hactivo = true;
+            pasos.Play();
+        }
+
+        if (Input.GetButtonDown("Vertical"))
+        {
+            Vactivo = true;
+            pasos.Play();
+        }
+
+        if (Input.GetButtonUp("Horizontal"))
+        {
+            Hactivo = false;
+            if (Vactivo == false)
+            {
+                pasos.Pause();
+            }
+        }
+
+        if (Input.GetButtonUp("Vertical"))
+        {
+            Vactivo = false;
+            if (Hactivo == false)
+            {
+                pasos.Pause();
+            }
+        }
+
+
     }
-    // Los métodos OnCollisionEnter y OnCollisionExit se han eliminado
-    // porque Physics.CheckSphere maneja la detección de suelo de manera más consistente
-    // para este tipo de controlador de personaje.
+
+    void FixedUpdate()
+    {
+        float h = Input.GetAxis("Horizontal");
+        float v = Input.GetAxis("Vertical");
+
+        Vector3 camForward = Vector3.Scale(cam.transform.forward, new Vector3(1, 0, 1)).normalized;
+        Vector3 camRight = cam.transform.right;
+
+        Vector3 moveDir = (camForward * v + camRight * h).normalized;
+
+        animator.SetFloat("Walk", moveDir.magnitude);
+
+        Vector3 velocity = moveDir * moveSpeed;
+        velocity.y = rb.linearVelocity.y;
+
+        rb.linearVelocity = velocity;
+
+        // Este bloque evita rotaciones bruscas hacia atrás
+        if (moveDir != Vector3.zero)
+        {
+            float dot = Vector3.Dot(moveDir, transform.forward);
+            if (dot > -0.5f) // Más estricto para no rotar si va en dirección contraria
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(moveDir);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * rotationSmoothSpeed);
+            }
+        }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        if (groundCheck != null)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        }
+    }
 }
