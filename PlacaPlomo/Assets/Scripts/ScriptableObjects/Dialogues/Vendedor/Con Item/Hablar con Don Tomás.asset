@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
+  m_Name: "Hablar con Don Tom\xE1s"
+  m_EditorClassIdentifier: 
+  speakerName: "Don Tom\xE1s"
+  dialogueText: "Ray\u2026 eso que llevas, \xBFde d\xF3nde lo sacaste? No deber\xEDas
+    andar husmeando tanto."
+  options:
+  - optionText: "Encontr\xE9 esto detr\xE1s de sus cajas. No parece az\xFAcar com\xFAn."
+    nextDialogue: {fileID: 11400000, guid: 31e8cb48cf9a3e84a957b51c9ce8026f, type: 2}
+    confianzaDelta: -0.2
+    sospechaDelta: 0.5
+  - optionText: "Los an\xE1lisis no mienten, Don Tom\xE1s. \xBFVa a colaborar o no?"
+    nextDialogue: {fileID: 11400000, guid: e2e06233ba9d5c84b930d88677c0f79b, type: 2}
+    confianzaDelta: 0.1
+    sospechaDelta: 0.3
+  - optionText: "Puede decir la verdad o esperar a la polic\xEDa."
+    nextDialogue: {fileID: 11400000, guid: 03f49f1c00fe597429b9e8ca15a1d283, type: 2}
+    confianzaDelta: -0.4
+    sospechaDelta: 0.3

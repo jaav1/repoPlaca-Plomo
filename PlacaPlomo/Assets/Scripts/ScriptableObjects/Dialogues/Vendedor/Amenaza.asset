@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
+  m_Name: Amenaza
+  m_EditorClassIdentifier: 
+  speakerName: Vendedor
+  dialogueText: "Ja, tienes agallas\u2026 o estupidez. Esta gente no reacciona bien
+    a las amenazas."
+  options:
+  - optionText: "Tienes raz\xF3n. Vamos a calmarnos."
+    nextDialogue: {fileID: 11400000, guid: 5506832a7ba735b44aa82c67683a7c91, type: 2}
+    confianzaDelta: 0
+    sospechaDelta: -1
+  - optionText: Solo responde antes de que me canse.
+    nextDialogue: {fileID: 11400000, guid: 9214f433d04a50544a826624d79c4644, type: 2}
+    confianzaDelta: -2
+    sospechaDelta: 3
