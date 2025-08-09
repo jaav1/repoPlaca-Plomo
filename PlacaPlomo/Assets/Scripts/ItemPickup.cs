@@ -7,8 +7,8 @@ public class ItemPickup : MonoBehaviour
     public string itemPage = "General";
 
     [Header("Configuración de Audio")]
-    public AudioClip pickupSound; // Aquí asignaremos el sonido de recogida
-    private AudioSource audioSource; // Referencia al componente AudioSource
+    public AudioClip pickupSound;
+    private AudioSource audioSource;
 
     private bool canPickup = false;
     private PickupTextUI pickupTextUI;
@@ -18,7 +18,7 @@ public class ItemPickup : MonoBehaviour
     {
         pickupTextUI = FindFirstObjectByType<PickupTextUI>();
         inventoryManager = FindFirstObjectByType<RadialInventoryManager>();
-        audioSource = GetComponent<AudioSource>(); // Obtenemos el componente AudioSource de este GameObject
+        audioSource = GetComponent<AudioSource>();
 
         if (!pickupTextUI)
             Debug.LogError("[ItemPickup] pickupTextUI no se encontró en la escena.");
@@ -26,12 +26,10 @@ public class ItemPickup : MonoBehaviour
         if (!inventoryManager)
             Debug.LogError("[ItemPickup] RadialInventoryManager no se encontró en la escena.");
 
-        // Opcional: Si el AudioSource no existe, lo creamos y configuramos.
-        // Esto es útil si no quieres añadirlo manualmente en el Inspector.
         if (!audioSource)
         {
             audioSource = gameObject.AddComponent<AudioSource>();
-            audioSource.playOnAwake = false; // Queremos reproducirlo cuando recojamos, no al inicio
+            audioSource.playOnAwake = false;
         }
     }
 
@@ -39,27 +37,25 @@ public class ItemPickup : MonoBehaviour
     {
         if (canPickup && Input.GetKeyDown(KeyCode.E))
         {
-            Debug.Log($"Recogiendo: {itemName} ({itemPage})");
-
+            Debug.Log($"Intentando recoger: {itemName} ({itemPage})");
             pickupTextUI?.HideText();
 
-            if (!string.IsNullOrEmpty(itemName))
-                inventoryManager?.AddItem(itemName, itemPage);
-
-            // --- NUEVO CÓDIGO PARA EL SONIDO ---
-            if (pickupSound != null && audioSource != null)
+            if (!string.IsNullOrEmpty(itemName) && inventoryManager != null)
             {
-                // Reproducimos el sonido. Si el AudioSource está en este GameObject,
-                // se destruirá con el ítem, lo cual está bien si el sonido es corto.
-                // Si el sonido es largo y quieres que termine de reproducirse,
-                // necesitarías un sistema de audio global o un AudioSource temporal.
-                audioSource.PlayOneShot(pickupSound);
-            }
-            // --- FIN NUEVO CÓDIGO ---
+                bool added = inventoryManager.TryAddItem(itemName, itemPage);
 
-            // Destruimos el objeto un poco después para permitir que el sonido se reproduzca si es corto
-            // Si el sonido es más largo, podrías necesitar otra estrategia (ver nota arriba).
-            Destroy(gameObject, 1f); // Destruye el objeto 0.1 segundos después
+                if (added)
+                {
+                    if (pickupSound != null && audioSource != null)
+                        audioSource.PlayOneShot(pickupSound);
+
+                    Destroy(gameObject, 1f); // Solo destruir si se agregó
+                }
+                else
+                {
+                    Debug.Log($"{itemName} no se recogió porque el inventario está lleno.");
+                }
+            }
         }
     }
 

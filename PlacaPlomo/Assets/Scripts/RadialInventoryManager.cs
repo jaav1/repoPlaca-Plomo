@@ -10,7 +10,6 @@ public class RadialInventoryManager : MonoBehaviour
     public GameObject radialPanel;
     public GameObject slotPrefab;
     public Transform slotContainer;
-    public float radius = 150f;
 
     [Header("Ventana de Información")]
     public GameObject infoPanel;
@@ -34,7 +33,12 @@ public class RadialInventoryManager : MonoBehaviour
     [Header("UI de página")]
     public TMP_Text pageNameText;
 
-    public int maxSlots = 12;
+    [Header("Inventario")]
+    public int maxSlots = 7; // Cambiado a 7
+
+    [Header("Sonido de eliminación")]
+    public AudioClip rubberHoseDeleteSound;
+    private AudioSource audioSource;
 
     private Dictionary<string, List<string>> pagedItems = new Dictionary<string, List<string>>();
     private List<string> pageOrder = new List<string>();
@@ -53,6 +57,18 @@ public class RadialInventoryManager : MonoBehaviour
 
     string CurrentPage => pageOrder.Count > 0 ? pageOrder[currentPageIndex] : "";
 
+    // Posiciones fijas para los 7 slots (ajusta según tu fondo)
+    private Vector2[] slotPositions = new Vector2[]
+    {
+        new Vector2(-50, 91),  // Slot 1
+        new Vector2(50, 91),     // Slot 2
+        new Vector2(105, 18),   // Slot 3
+        new Vector2(99, -60),  // Slot 4
+        new Vector2(0, -100),     // Slot 5
+        new Vector2(-99, -60),   // Slot 6
+        new Vector2(-105, 18)     // Slot 7
+    };
+
     void Start()
     {
         itemIcons.Add("Llave", llaveSprite);
@@ -63,8 +79,33 @@ public class RadialInventoryManager : MonoBehaviour
         worldItemPrefabs.Add("Disco Duro", discoPrefab);
         worldItemPrefabs.Add("Carpeta", carpetaPrefab);
 
+        audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+
         confirmDeletePanel.SetActive(false);
     }
+
+    public bool TryAddItem(string itemName, string pageName = "General")
+    {
+        if (!pagedItems.ContainsKey(pageName))
+        {
+            pagedItems.Add(pageName, new List<string>());
+            pageOrder.Add(pageName);
+        }
+
+        var pageList = pagedItems[pageName];
+
+        if (pageList.Count >= maxSlots)
+        {
+            ShowInventoryFullMessage(itemName, pageName);
+            return false; // Inventario lleno, no agregar
+        }
+
+        pageList.Add(itemName);
+        RefreshInventoryUI();
+        return true; // Agregado con éxito
+    }
+
 
     void Update()
     {
@@ -105,12 +146,20 @@ public class RadialInventoryManager : MonoBehaviour
 
         if (pageList.Count >= maxSlots)
         {
-            Debug.Log($"Página '{pageName}' llena. No se puede agregar: " + itemName);
+            ShowInventoryFullMessage(itemName, pageName);
             return;
         }
 
         pageList.Add(itemName);
         RefreshInventoryUI();
+    }
+
+    void ShowInventoryFullMessage(string itemName, string pageName)
+    {
+        infoPanel.SetActive(true);
+        itemNameText.text = "Inventario lleno";
+        itemDescriptionText.text = $"No puedes guardar \"{itemName}\". La pagina \"{pageName}\" del inventario está al máximo ({maxSlots}).";
+        Debug.Log($"Inventario lleno en página {pageName}. No se puede agregar: {itemName}");
     }
 
     public void RemoveItem(string itemName)
@@ -121,10 +170,13 @@ public class RadialInventoryManager : MonoBehaviour
             RefreshInventoryUI();
             Debug.Log("Objeto eliminado: " + itemName);
 
+            if (rubberHoseDeleteSound != null)
+                audioSource.PlayOneShot(rubberHoseDeleteSound);
+
             if (worldItemPrefabs.ContainsKey(itemName))
             {
                 Vector3 dropPos = Camera.main.transform.position
-                            + Camera.main.transform.forward * 6.0f;
+                            + Camera.main.transform.forward * 2.0f;
                 dropPos.y = 0.5f;
                 GameObject dropped = Instantiate(worldItemPrefabs[itemName], dropPos, Quaternion.identity);
 
@@ -171,10 +223,7 @@ public class RadialInventoryManager : MonoBehaviour
         if (pageNameText != null)
             pageNameText.text = CurrentPage;
 
-        float angleStep = 360f / items.Count;
-        float angle = 0f;
-
-        for (int i = 0; i < items.Count; i++)
+        for (int i = 0; i < items.Count && i < slotPositions.Length; i++)
         {
             string itemName = items[i];
             GameObject slot = Instantiate(slotPrefab, slotContainer);
@@ -185,9 +234,7 @@ public class RadialInventoryManager : MonoBehaviour
                 icon.sprite = itemIcons[itemName];
 
             RectTransform rt = slot.GetComponent<RectTransform>();
-            float x = Mathf.Cos(angle * Mathf.Deg2Rad) * radius;
-            float y = Mathf.Sin(angle * Mathf.Deg2Rad) * radius;
-            rt.anchoredPosition = new Vector2(x, y);
+            rt.anchoredPosition = slotPositions[i];
 
             int index = i;
             slot.GetComponent<Button>().onClick.AddListener(() => SelectItem(index));
@@ -208,8 +255,6 @@ public class RadialInventoryManager : MonoBehaviour
                 }
             });
             trigger.triggers.Add(rightClick);
-
-            angle += angleStep;
         }
     }
 
