@@ -46,6 +46,12 @@ public class ItemPickup : MonoBehaviour
 
                 if (added)
                 {
+                    // Agregar a la lista de objetos recogidos en GameManager
+                    GameManager.instancia.AddItem(itemName);
+
+                    // Guardar automáticamente la partida
+                    GameManager.instancia.GuardarAhora();
+
                     if (pickupSound != null && audioSource != null)
                         audioSource.PlayOneShot(pickupSound);
 
