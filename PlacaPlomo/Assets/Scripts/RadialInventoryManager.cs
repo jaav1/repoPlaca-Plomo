@@ -4,73 +4,93 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
 
+// Este script gestiona un sistema de inventario radial con múltiples páginas.
+// Maneja la adición, eliminación y visualización de ítems, así como la interacción con la interfaz de usuario.
 public class RadialInventoryManager : MonoBehaviour
 {
+    // Variables de la interfaz de usuario que se asignan en el editor de Unity.
     [Header("UI Básica")]
-    public GameObject radialPanel;
-    public GameObject slotPrefab;
-    public Transform slotContainer;
+    public GameObject radialPanel; // Panel principal del inventario radial.
+    public GameObject slotPrefab; // Prefab para crear los espacios de inventario.
+    public Transform slotContainer; // Contenedor que albergará los slots en la UI.
 
+    // Variables para mostrar detalles de los ítems seleccionados.
     [Header("Ventana de Información")]
-    public GameObject infoPanel;
-    public TMP_Text itemNameText;
-    public TMP_Text itemDescriptionText;
+    public GameObject infoPanel; // Panel de información que muestra el nombre y la descripción del ítem.
+    public TMP_Text itemNameText; // Texto para el nombre del ítem.
+    public TMP_Text itemDescriptionText; // Texto para la descripción del ítem.
 
+    // Sprites y prefabs de los ítems.
     [Header("Íconos por ítem")]
-    public Sprite llaveSprite;
-    public Sprite carkeySprite;
-    public Sprite carpetaSprite;
+    public Sprite llaveSprite; // Icono para el ítem "Llave".
+    public Sprite carkeySprite; // Icono para el ítem "Llave de coche".
+    public Sprite carpetaSprite; // Icono para el ítem "Carpeta".
 
+    // Prefabs de los ítems que se pueden soltar en el mundo del juego.
     [Header("Prefabs físicos para soltar")]
-    public GameObject llavePrefab;
-    public GameObject carkeyPrefab;
-    public GameObject carpetaPrefab;
+    public GameObject llavePrefab; // Prefab físico de la llave.
+    public GameObject carkeyPrefab; // Prefab físico de la llave de coche.
+    public GameObject carpetaPrefab; // Prefab físico de la carpeta.
 
+    // Variables para el panel de confirmación de eliminación.
     [Header("Confirmación de eliminación")]
-    public GameObject confirmDeletePanel;
-    public TMP_Text confirmDeleteText;
+    public GameObject confirmDeletePanel; // Panel que pregunta al jugador si desea eliminar un ítem.
+    public TMP_Text confirmDeleteText; // Texto de confirmación.
 
+    // Texto que muestra el nombre de la página actual del inventario.
     [Header("UI de página")]
     public TMP_Text pageNameText;
 
     [Header("Inventario")]
-    public int maxSlots = 7; 
+    public int maxSlots = 7; // El número máximo de slots por página.
 
+    // Sonido que se reproduce al eliminar un ítem.
     [Header("Sonido de eliminación")]
     public AudioClip rubberHoseDeleteSound;
     private AudioSource audioSource;
 
+    // --- Variables internas para la lógica del inventario ---
+
+    // Almacena los ítems por página usando un diccionario.
     private Dictionary<string, List<string>> pagedItems = new Dictionary<string, List<string>>();
+    // Mantiene el orden de las páginas del inventario.
     private List<string> pageOrder = new List<string>();
+    // Índice de la página actual.
     private int currentPageIndex = 0;
+    // Almacena el ítem que se va a eliminar hasta que se confirme.
     private string pendingItemToRemove;
 
+    // Diccionarios para almacenar descripciones, íconos y prefabs de los ítems.
     private Dictionary<string, string> itemDescriptions = new Dictionary<string, string>()
     {
         { "Llave", "Una llave de bronce. Parece encajar en una cerradura antigua." },
         { "Llave de coche", "Sin esta llave no podras conducir." },
         { "Carpeta", "Al parecer hay mucha información importante aquí." }
     };
-
     private Dictionary<string, Sprite> itemIcons = new Dictionary<string, Sprite>();
     private Dictionary<string, GameObject> worldItemPrefabs = new Dictionary<string, GameObject>();
 
+    // Propiedad que devuelve el nombre de la página actual.
     string CurrentPage => pageOrder.Count > 0 ? pageOrder[currentPageIndex] : "";
 
-    // Posiciones fijas para los 7 slots (ajusta según tu fondo)
+    // Posiciones predefinidas para los slots del inventario radial.
     private Vector2[] slotPositions = new Vector2[]
     {
-        new Vector2(-50, 91),  // Slot 1
-        new Vector2(50, 91),     // Slot 2
-        new Vector2(105, 18),   // Slot 3
-        new Vector2(99, -60),  // Slot 4
-        new Vector2(0, -100),     // Slot 5
-        new Vector2(-99, -60),   // Slot 6
-        new Vector2(-105, 18)     // Slot 7
+        new Vector2(-50, 91),
+        new Vector2(50, 91),
+        new Vector2(105, 18),
+        new Vector2(99, -60),
+        new Vector2(0, -100),
+        new Vector2(-99, -60),
+        new Vector2(-105, 18)
     };
 
+    // --- Métodos de ciclo de vida ---
+
+    // Se llama al inicio para inicializar diccionarios y componentes de audio.
     void Start()
     {
+        // Llena los diccionarios de ítems con los sprites y prefabs correspondientes.
         itemIcons.Add("Llave", llaveSprite);
         itemIcons.Add("Llave de coche", carkeySprite);
         itemIcons.Add("Carpeta", carpetaSprite);
@@ -79,14 +99,53 @@ public class RadialInventoryManager : MonoBehaviour
         worldItemPrefabs.Add("Llave de coche", carkeyPrefab);
         worldItemPrefabs.Add("Carpeta", carpetaPrefab);
 
+        // Agrega un componente AudioSource al objeto del juego.
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
 
+        // Desactiva el panel de confirmación de eliminación al inicio.
         confirmDeletePanel.SetActive(false);
     }
 
+    // Se ejecuta en cada fotograma para manejar la entrada del teclado que abre y cierra el inventario.
+    void Update()
+    {
+        // Activa el panel del inventario al presionar Tab.
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            radialPanel.SetActive(true);
+            infoPanel.SetActive(false);
+            // Muestra y desbloquea el cursor para la interacción con la UI.
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+            RefreshInventoryUI();
+        }
+
+        // Desactiva el panel del inventario al soltar Tab.
+        if (Input.GetKeyUp(KeyCode.Tab))
+        {
+            radialPanel.SetActive(false);
+            infoPanel.SetActive(false);
+            confirmDeletePanel.SetActive(false);
+            // Oculta y bloquea el cursor para volver al control del juego.
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+
+        // Permite cambiar de página si el panel radial está activo.
+        if (radialPanel.activeSelf)
+        {
+            if (Input.GetKeyDown(KeyCode.E)) NextPage();
+            if (Input.GetKeyDown(KeyCode.Q)) PreviousPage();
+        }
+    }
+
+    // --- Métodos de gestión del inventario ---
+
+    // Intenta agregar un ítem al inventario, comprobando si hay espacio.
     public bool TryAddItem(string itemName, string pageName = "General")
     {
+        // Crea una nueva página si no existe.
         if (!pagedItems.ContainsKey(pageName))
         {
             pagedItems.Add(pageName, new List<string>());
@@ -95,45 +154,20 @@ public class RadialInventoryManager : MonoBehaviour
 
         var pageList = pagedItems[pageName];
 
+        // Comprueba si la página está llena y, si es así, muestra un mensaje.
         if (pageList.Count >= maxSlots)
         {
             ShowInventoryFullMessage(itemName, pageName);
-            return false; // Inventario lleno, no agregar
+            return false;
         }
 
+        // Agrega el ítem y actualiza la UI.
         pageList.Add(itemName);
         RefreshInventoryUI();
-        return true; // Agregado con éxito
+        return true;
     }
 
-
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Tab))
-        {
-            radialPanel.SetActive(true);
-            infoPanel.SetActive(false);
-            Cursor.visible = true;
-            Cursor.lockState = CursorLockMode.None;
-            RefreshInventoryUI();
-        }
-
-        if (Input.GetKeyUp(KeyCode.Tab))
-        {
-            radialPanel.SetActive(false);
-            infoPanel.SetActive(false);
-            confirmDeletePanel.SetActive(false);
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
-        }
-
-        if (radialPanel.activeSelf)
-        {
-            if (Input.GetKeyDown(KeyCode.E)) NextPage();
-            if (Input.GetKeyDown(KeyCode.Q)) PreviousPage();
-        }
-    }
-
+    // Un método alternativo para agregar un ítem, sin valor de retorno booleano.
     public void AddItem(string itemName, string pageName = "General")
     {
         if (!pagedItems.ContainsKey(pageName))
@@ -154,6 +188,7 @@ public class RadialInventoryManager : MonoBehaviour
         RefreshInventoryUI();
     }
 
+    // Muestra un mensaje en el panel de información cuando el inventario está lleno.
     void ShowInventoryFullMessage(string itemName, string pageName)
     {
         infoPanel.SetActive(true);
@@ -162,8 +197,10 @@ public class RadialInventoryManager : MonoBehaviour
         Debug.Log($"Inventario lleno en página {pageName}. No se puede agregar: {itemName}");
     }
 
+    // Elimina un ítem del inventario y lo suelta en el mundo del juego.
     public void RemoveItem(string itemName)
     {
+        // Busca el ítem y lo elimina de la lista.
         if (pagedItems.ContainsKey(CurrentPage) && pagedItems[CurrentPage].Contains(itemName))
         {
             pagedItems[CurrentPage].Remove(itemName);
@@ -173,10 +210,11 @@ public class RadialInventoryManager : MonoBehaviour
             if (rubberHoseDeleteSound != null)
                 audioSource.PlayOneShot(rubberHoseDeleteSound);
 
+            // Crea una instancia del prefab físico del ítem y lo lanza.
             if (worldItemPrefabs.ContainsKey(itemName))
             {
                 Vector3 dropPos = Camera.main.transform.position
-                            + Camera.main.transform.forward * 2.0f;
+                               + Camera.main.transform.forward * 2.0f;
                 dropPos.y = 0.5f;
                 GameObject dropped = Instantiate(worldItemPrefabs[itemName], dropPos, Quaternion.identity);
 
@@ -195,6 +233,7 @@ public class RadialInventoryManager : MonoBehaviour
         }
     }
 
+    // Confirma la eliminación de un ítem y cierra el panel de confirmación.
     public void ConfirmDeletion()
     {
         if (!string.IsNullOrEmpty(pendingItemToRemove))
@@ -204,14 +243,17 @@ public class RadialInventoryManager : MonoBehaviour
         pendingItemToRemove = null;
     }
 
+    // Cancela la eliminación y cierra el panel de confirmación.
     public void CancelDeletion()
     {
         confirmDeletePanel.SetActive(false);
         pendingItemToRemove = null;
     }
 
+    // Actualiza la interfaz de usuario del inventario, creando los slots y asignando los íconos.
     void RefreshInventoryUI()
     {
+        // Destruye los slots existentes antes de recrearlos.
         foreach (Transform child in slotContainer)
             Destroy(child.gameObject);
 
@@ -220,25 +262,31 @@ public class RadialInventoryManager : MonoBehaviour
         List<string> items = pagedItems[CurrentPage];
         if (items.Count == 0) return;
 
+        // Actualiza el texto con el nombre de la página.
         if (pageNameText != null)
             pageNameText.text = CurrentPage;
 
+        // Instancia los prefabs de los slots y los configura con los datos de los ítems.
         for (int i = 0; i < items.Count && i < slotPositions.Length; i++)
         {
             string itemName = items[i];
             GameObject slot = Instantiate(slotPrefab, slotContainer);
             slot.name = itemName;
 
+            // Asigna el ícono del ítem.
             Image icon = slot.GetComponentInChildren<Image>();
             if (itemIcons.ContainsKey(itemName))
                 icon.sprite = itemIcons[itemName];
 
+            // Posiciona el slot en la UI.
             RectTransform rt = slot.GetComponent<RectTransform>();
             rt.anchoredPosition = slotPositions[i];
 
             int index = i;
+            // Configura los eventos de clic para seleccionar un ítem.
             slot.GetComponent<Button>().onClick.AddListener(() => SelectItem(index));
 
+            // Configura el evento de clic derecho para la eliminación.
             EventTrigger trigger = slot.AddComponent<EventTrigger>();
             EventTrigger.Entry rightClick = new EventTrigger.Entry
             {
@@ -258,6 +306,7 @@ public class RadialInventoryManager : MonoBehaviour
         }
     }
 
+    // Muestra la información de un ítem seleccionado en el panel de información.
     void SelectItem(int index)
     {
         if (!pagedItems.ContainsKey(CurrentPage)) return;
@@ -275,6 +324,7 @@ public class RadialInventoryManager : MonoBehaviour
             itemDescriptionText.text = "Sin descripción disponible.";
     }
 
+    // Cambia a la siguiente página del inventario.
     public void NextPage()
     {
         if (pageOrder.Count == 0) return;
@@ -282,6 +332,7 @@ public class RadialInventoryManager : MonoBehaviour
         RefreshInventoryUI();
     }
 
+    // Cambia a la página anterior del inventario.
     public void PreviousPage()
     {
         if (pageOrder.Count == 0) return;
@@ -289,6 +340,7 @@ public class RadialInventoryManager : MonoBehaviour
         RefreshInventoryUI();
     }
 
+    // Comprueba si un ítem específico está en el inventario.
     public bool HasItem(string itemName)
     {
         if (!pagedItems.ContainsKey(CurrentPage))

@@ -1,8 +1,11 @@
 using UnityEngine;
 
+// Este script controla el movimiento y la vista de un jugador en primera persona.
+// Requiere un componente Rigidbody para manejar las interacciones físicas.
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : MonoBehaviour
 {
+    // Variables ajustables en el Inspector de Unity para el movimiento del jugador.
     [Header("Movimiento")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float jumpForce = 7f;
@@ -10,18 +13,24 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.2f;
 
+    // Variables para controlar el movimiento de la cámara con el ratón.
     [Header("Cámara")]
     [SerializeField] private Transform cameraHolder;
     [SerializeField] private float mouseSensitivity = 2f;
     private float xRotation = 0f;
 
+    // Variable para la fuente de audio de los pasos.
     [Header("Audio")]
     [SerializeField] private AudioSource pasos;
 
+    // Variables internas que el script utiliza para su funcionamiento.
     private Rigidbody rb;
     private bool isGrounded;
-    private bool jumpInput; // Variable para manejar la entrada del salto
+    private bool jumpInput;
 
+    // --- Métodos de ciclo de vida de Unity ---
+
+    // Se ejecuta al inicio, inicializando el Rigidbody y configurando el cursor.
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -32,12 +41,13 @@ public class PlayerMovement : MonoBehaviour
             Debug.LogError("CameraHolder no asignado.");
     }
 
+    // Se ejecuta en cada fotograma, manejando la entrada del jugador y la cámara.
     void Update()
     {
         HandleMouseLook();
         CheckGrounded();
 
-        // Almacenar la entrada del salto en Update
+        // Registra la entrada del salto para que sea procesada en FixedUpdate.
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
             jumpInput = true;
@@ -46,12 +56,16 @@ public class PlayerMovement : MonoBehaviour
         HandleFootsteps();
     }
 
+    // Se ejecuta en un intervalo de tiempo fijo, ideal para operaciones de física.
     void FixedUpdate()
     {
         HandleMovement();
         HandleJump();
     }
 
+    // --- Métodos de funcionalidad del jugador ---
+
+    // Controla la rotación de la cámara del jugador usando el movimiento del ratón.
     private void HandleMouseLook()
     {
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
@@ -64,6 +78,7 @@ public class PlayerMovement : MonoBehaviour
         transform.Rotate(Vector3.up * mouseX);
     }
 
+    // Maneja el movimiento horizontal del jugador aplicando velocidad al Rigidbody.
     private void HandleMovement()
     {
         float h = Input.GetAxis("Horizontal");
@@ -75,21 +90,23 @@ public class PlayerMovement : MonoBehaviour
         rb.linearVelocity = new Vector3(move.x, rb.linearVelocity.y, move.z);
     }
 
+    // Aplica una fuerza de salto al Rigidbody si la entrada de salto está registrada.
     private void HandleJump()
     {
-        // Aplicar la fuerza de salto en FixedUpdate
         if (jumpInput)
         {
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-            jumpInput = false; // Resetear la variable
+            jumpInput = false;
         }
     }
 
+    // Comprueba si el jugador está en contacto con una capa de suelo.
     private void CheckGrounded()
     {
         isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayer);
     }
 
+    // Controla la reproducción de los sonidos de pasos según si el jugador se está moviendo.
     private void HandleFootsteps()
     {
         bool isMoving = Input.GetAxis("Horizontal") != 0 || Input.GetAxis("Vertical") != 0;
@@ -104,6 +121,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    // Dibuja un gizmo para visualizar la esfera de detección del suelo en el Editor de Unity.
     void OnDrawGizmosSelected()
     {
         if (groundCheck != null)
