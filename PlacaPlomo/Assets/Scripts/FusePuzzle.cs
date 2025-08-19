@@ -78,6 +78,8 @@ public class FusePuzzle : MonoBehaviour
 
         if (successAudio != null) successAudio.Play();
         if (puzzlePanel != null) puzzlePanel.SetActive(false);
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
         if (carController != null) carController.EnableDriving();
     }
 }
