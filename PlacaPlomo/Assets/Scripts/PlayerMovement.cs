@@ -3,110 +3,104 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : MonoBehaviour
 {
-    public float moveSpeed = 5f;
-    public float jumpForce = 7f;
-    public LayerMask groundLayer;
-    public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
-    public float rotationSmoothSpeed = 3f;
+    [Header("Movimiento")]
+    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float jumpForce = 7f;
+    [SerializeField] private LayerMask groundLayer;
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private float groundCheckRadius = 0.2f;
 
-    public AudioSource pasos;
-    private bool Hactivo;
-    private bool Vactivo;
+    [Header("Cámara")]
+    [SerializeField] private Transform cameraHolder;
+    [SerializeField] private float mouseSensitivity = 2f;
+    private float xRotation = 0f;
+
+    [Header("Audio")]
+    [SerializeField] private AudioSource pasos;
 
     private Rigidbody rb;
-    private Camera cam;
     private bool isGrounded;
-
-    [Header("Animacion")]
-
-    private Animator animator;
+    private bool jumpInput; // Variable para manejar la entrada del salto
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        cam = Camera.main;
-        animator = GetComponent<Animator>();
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
 
-        if (rb == null)
-            Debug.LogError("Rigidbody no encontrado en el objeto Player");
-
-        if (cam == null)
-            Debug.LogError("Camara principal no encontrada. Asegurate de que tenga el tag 'MainCamera'");
+        if (cameraHolder == null)
+            Debug.LogError("CameraHolder no asignado.");
     }
 
     void Update()
     {
+        HandleMouseLook();
+        CheckGrounded();
 
-        isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayer);
-        animator.SetBool("isGrounded", isGrounded);
-
-        animator.SetFloat("VelocidadY", rb.linearVelocity.y);
-
+        // Almacenar la entrada del salto en Update
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            jumpInput = true;
         }
 
-        if (Input.GetButtonDown("Horizontal"))
-        {
-            Hactivo = true;
-            pasos.Play();
-        }
-
-        if (Input.GetButtonDown("Vertical"))
-        {
-            Vactivo = true;
-            pasos.Play();
-        }
-
-        if (Input.GetButtonUp("Horizontal"))
-        {
-            Hactivo = false;
-            if (Vactivo == false)
-            {
-                pasos.Pause();
-            }
-        }
-
-        if (Input.GetButtonUp("Vertical"))
-        {
-            Vactivo = false;
-            if (Hactivo == false)
-            {
-                pasos.Pause();
-            }
-        }
-
-
+        HandleFootsteps();
     }
 
     void FixedUpdate()
     {
+        HandleMovement();
+        HandleJump();
+    }
+
+    private void HandleMouseLook()
+    {
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+
+        xRotation -= mouseY;
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+
+        cameraHolder.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        transform.Rotate(Vector3.up * mouseX);
+    }
+
+    private void HandleMovement()
+    {
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
 
-        Vector3 camForward = Vector3.Scale(cam.transform.forward, new Vector3(1, 0, 1)).normalized;
-        Vector3 camRight = cam.transform.right;
+        Vector3 move = transform.forward * v + transform.right * h;
+        move = move.normalized * moveSpeed;
 
-        Vector3 moveDir = (camForward * v + camRight * h).normalized;
+        rb.linearVelocity = new Vector3(move.x, rb.linearVelocity.y, move.z);
+    }
 
-        animator.SetFloat("Walk", moveDir.magnitude);
-
-        Vector3 velocity = moveDir * moveSpeed;
-        velocity.y = rb.linearVelocity.y;
-
-        rb.linearVelocity = velocity;
-
-        // Este bloque evita rotaciones bruscas hacia atrás
-        if (moveDir != Vector3.zero)
+    private void HandleJump()
+    {
+        // Aplicar la fuerza de salto en FixedUpdate
+        if (jumpInput)
         {
-            float dot = Vector3.Dot(moveDir, transform.forward);
-            if (dot > -0.5f) // Más estricto para no rotar si va en dirección contraria
-            {
-                Quaternion targetRotation = Quaternion.LookRotation(moveDir);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * rotationSmoothSpeed);
-            }
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            jumpInput = false; // Resetear la variable
+        }
+    }
+
+    private void CheckGrounded()
+    {
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayer);
+    }
+
+    private void HandleFootsteps()
+    {
+        bool isMoving = Input.GetAxis("Horizontal") != 0 || Input.GetAxis("Vertical") != 0;
+
+        if (isMoving && !pasos.isPlaying)
+        {
+            pasos.Play();
+        }
+        else if (!isMoving && pasos.isPlaying)
+        {
+            pasos.Pause();
         }
     }
 

@@ -18,12 +18,12 @@ public class RadialInventoryManager : MonoBehaviour
 
     [Header("Íconos por ítem")]
     public Sprite llaveSprite;
-    public Sprite discoSprite;
+    public Sprite carkeySprite;
     public Sprite carpetaSprite;
 
     [Header("Prefabs físicos para soltar")]
     public GameObject llavePrefab;
-    public GameObject discoPrefab;
+    public GameObject carkeyPrefab;
     public GameObject carpetaPrefab;
 
     [Header("Confirmación de eliminación")]
@@ -34,7 +34,7 @@ public class RadialInventoryManager : MonoBehaviour
     public TMP_Text pageNameText;
 
     [Header("Inventario")]
-    public int maxSlots = 7; // Cambiado a 7
+    public int maxSlots = 7; 
 
     [Header("Sonido de eliminación")]
     public AudioClip rubberHoseDeleteSound;
@@ -48,7 +48,7 @@ public class RadialInventoryManager : MonoBehaviour
     private Dictionary<string, string> itemDescriptions = new Dictionary<string, string>()
     {
         { "Llave", "Una llave de bronce. Parece encajar en una cerradura antigua." },
-        { "Disco Duro", "Contiene información importante. No lo pierdas." },
+        { "Llave de coche", "Sin esta llave no podras conducir." },
         { "Carpeta", "Al parecer hay mucha información importante aquí." }
     };
 
@@ -72,11 +72,11 @@ public class RadialInventoryManager : MonoBehaviour
     void Start()
     {
         itemIcons.Add("Llave", llaveSprite);
-        itemIcons.Add("Disco Duro", discoSprite);
+        itemIcons.Add("Llave de coche", carkeySprite);
         itemIcons.Add("Carpeta", carpetaSprite);
 
         worldItemPrefabs.Add("Llave", llavePrefab);
-        worldItemPrefabs.Add("Disco Duro", discoPrefab);
+        worldItemPrefabs.Add("Llave de coche", carkeyPrefab);
         worldItemPrefabs.Add("Carpeta", carpetaPrefab);
 
         audioSource = gameObject.AddComponent<AudioSource>();
