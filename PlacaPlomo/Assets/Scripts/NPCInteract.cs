@@ -2,82 +2,94 @@ using UnityEngine;
 
 public class NPCInteract : MonoBehaviour
 {
-    public Dialogue defaultDialogue;
-    public Dialogue itemDialogue;
+    [Header("Diálogos")]
+    public Dialogue defaultDialogue;      // Diálogo por defecto
+    public Dialogue itemDialogue;         // Diálogo si el jugador tiene el ítem
     public DialogueManager dialogueManager;
-    public bool jugadorTieneItem = false;
 
-    public GameObject mensajeInteraccion; // UI "Presiona E para hablar"
+    [Header("Interacción UI")]
+    public GameObject mensajeInteraccion; // "Presiona E para hablar"
+
+    [Header("Ítem requerido (nombre EXACTO como en tu inventario)")]
+    public string nombreItemRequerido = "Carpeta";
+
+    [Tooltip("Asigna el inventario del jugador aquí. Si lo dejas vacío, el script lo buscará automáticamente.")]
+    public RadialInventoryManager inventarioJugador;
 
     private bool jugadorCerca = false;
 
+    private void Awake()
+    {
+        if (mensajeInteraccion) mensajeInteraccion.SetActive(false);
+        if (!dialogueManager) dialogueManager = FindFirstObjectByType<DialogueManager>();
+    }
+
     private void Start()
     {
-        // Oculta el mensaje si está asignado
-        if (mensajeInteraccion != null)
-            mensajeInteraccion.SetActive(false);
-
-        if (dialogueManager == null)
-            Debug.LogWarning("No asignaste DialogueManager en NPCInteract.");
+        // Respaldo: si no está asignado, intenta encontrar uno en la escena
+        if (!inventarioJugador)
+        {
+            inventarioJugador = FindFirstObjectByType<RadialInventoryManager>();
+            if (!inventarioJugador)
+                Debug.LogWarning("[NPCInteract] No se encontró RadialInventoryManager en la escena. Puedes asignarlo en el inspector.");
+        }
     }
 
     private void Update()
     {
-        // Solo escuchar la tecla E si el jugador está cerca y no hay diálogo activo
-        if (jugadorCerca && Input.GetKeyDown(KeyCode.E))
+        if (!jugadorCerca || !Input.GetKeyDown(KeyCode.E)) return;
+
+        if (!dialogueManager)
         {
-            if (dialogueManager == null)
-            {
-                Debug.LogWarning("DialogueManager no asignado.");
-                return;
-            }
-
-            // Iniciar diálogo dependiendo si el jugador tiene item o no
-            if (jugadorTieneItem && itemDialogue != null)
-            {
-                Debug.Log("Iniciando diálogo con item.");
-                dialogueManager.StartDialogue(itemDialogue);
-            }
-            else if (defaultDialogue != null)
-            {
-                Debug.Log("Iniciando diálogo por defecto.");
-                dialogueManager.StartDialogue(defaultDialogue);
-            }
-            else
-            {
-                Debug.LogWarning("No hay diálogo asignado para este NPC.");
-            }
-
-            // Ocultar el mensaje cuando empieza el diálogo
-            if (mensajeInteraccion != null)
-                mensajeInteraccion.SetActive(false);
+            Debug.LogWarning("[NPCInteract] DialogueManager no asignado.");
+            return;
         }
+
+        bool tieneItem = inventarioJugador && inventarioJugador.HasItem(nombreItemRequerido);
+        Debug.Log($"[NPCInteract] Revisión de ítem -> requerido: '{nombreItemRequerido}' | tieneItem={tieneItem} | inventario={(inventarioJugador ? "OK" : "NULL")}");
+
+        if (tieneItem && itemDialogue)
+        {
+            dialogueManager.StartDialogue(itemDialogue);
+        }
+        else if (defaultDialogue)
+        {
+            dialogueManager.StartDialogue(defaultDialogue);
+        }
+        else
+        {
+            Debug.LogWarning("[NPCInteract] No hay diálogos asignados.");
+        }
+
+        if (mensajeInteraccion) mensajeInteraccion.SetActive(false);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (!other.CompareTag("Player")) return;
+
+        jugadorCerca = true;
+
+        // Captura el inventario desde el propio Player que entró al trigger
+        if (!inventarioJugador)
         {
-            jugadorCerca = true;
-            // Mostrar mensaje de interacción
-            if (mensajeInteraccion != null)
-                mensajeInteraccion.SetActive(true);
+            inventarioJugador = other.GetComponentInParent<RadialInventoryManager>();
+            if (!inventarioJugador)
+                inventarioJugador = other.GetComponent<RadialInventoryManager>();
         }
+
+        if (mensajeInteraccion) mensajeInteraccion.SetActive(true);
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Player"))
-        {
-            jugadorCerca = false;
+        if (!other.CompareTag("Player")) return;
 
-            // Cerrar diálogo solo si está activo
-            if (dialogueManager != null && dialogueManager.IsDialogueActive())
-                dialogueManager.EndDialogue();
+        jugadorCerca = false;
 
-            // Ocultar mensaje de interacción
-            if (mensajeInteraccion != null)
-                mensajeInteraccion.SetActive(false);
-        }
+        if (dialogueManager && dialogueManager.IsDialogueActive())
+            dialogueManager.EndDialogue();
+
+        if (mensajeInteraccion) mensajeInteraccion.SetActive(false);
     }
 }

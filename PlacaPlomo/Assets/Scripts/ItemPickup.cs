@@ -83,7 +83,7 @@ public class ItemPickup : MonoBehaviour
         }
     }
 
-    void LateUpdate()
+  /*  void LateUpdate()
     {
         // Efecto "billboard": hacer que el objeto mire hacia la cámara
         if (Camera.main != null)
@@ -92,7 +92,7 @@ public class ItemPickup : MonoBehaviour
             transform.LookAt(lookPos);
             transform.rotation = Quaternion.Euler(0f, transform.rotation.eulerAngles.y, 0f);
         }
-    }
+    } */
 
     void OnTriggerEnter(Collider other)
     {

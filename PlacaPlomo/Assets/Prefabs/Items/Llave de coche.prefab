@@ -62,7 +62,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 8ecb9a3ef4d253240b7dfc0c529a1317, type: 3}
       propertyPath: m_Name
-      value: carkey
+      value: Llave de coche
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -5,6 +5,10 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : MonoBehaviour
 {
+    // Variable para activar y desactivar los controles del jugador.
+    [Header("Funcionalidad")]
+    public bool controlsEnabled = true;
+        
     // Variables ajustables en el Inspector de Unity para el movimiento del jugador.
     [Header("Movimiento")]
     [SerializeField] private float moveSpeed = 5f;
@@ -44,6 +48,9 @@ public class PlayerMovement : MonoBehaviour
     // Se ejecuta en cada fotograma, manejando la entrada del jugador y la cámara.
     void Update()
     {
+        // Si los controles no están habilitados, no hacemos nada.
+        if (!controlsEnabled) return;
+
         HandleMouseLook();
         CheckGrounded();
 
@@ -59,6 +66,9 @@ public class PlayerMovement : MonoBehaviour
     // Se ejecuta en un intervalo de tiempo fijo, ideal para operaciones de física.
     void FixedUpdate()
     {
+        // Si los controles no están habilitados, no hacemos nada.
+        if (!controlsEnabled) return;
+
         HandleMovement();
         HandleJump();
     }
@@ -68,6 +78,8 @@ public class PlayerMovement : MonoBehaviour
     // Controla la rotación de la cámara del jugador usando el movimiento del ratón.
     private void HandleMouseLook()
     {
+        if (!controlsEnabled) return; // Asegura que solo funcione si los controles están activos.
+
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 

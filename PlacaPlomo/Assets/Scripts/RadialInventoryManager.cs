@@ -8,6 +8,21 @@ using System.Collections.Generic;
 // Maneja la adición, eliminación y visualización de ítems, así como la interacción con la interfaz de usuario.
 public class RadialInventoryManager : MonoBehaviour
 {
+    [Header("Inspección de Ítems")]
+    public GameObject inspectionCamera; // La cámara que mostrará el objeto.
+    public Transform inspectionPoint; // El punto en el mundo donde aparecerá el ítem.
+
+    [Header("Referencias de UI y Player")]
+    public Button inspectButton; // Referencia al nuevo botón de inspección.
+    public PlayerMovement playerMovement; // Referencia al script PlayerMovement.
+    public RadialInventoryManager radialInventoryManager; // Referencia a este script.
+
+    // Variables internas para la lógica de inspección
+    private GameObject inspectedItemInstance; // Almacenará la instancia del ítem que estamos inspeccionando.
+    private bool isInspecting = false;
+
+    private string lastSelectedItemId; // Almacena el nombre del último ítem seleccionado.
+
     // Variables de la interfaz de usuario que se asignan en el editor de Unity.
     [Header("UI Básica")]
     public GameObject radialPanel; // Panel principal del inventario radial.
@@ -105,6 +120,9 @@ public class RadialInventoryManager : MonoBehaviour
 
         // Desactiva el panel de confirmación de eliminación al inicio.
         confirmDeletePanel.SetActive(false);
+
+        // Agrega el listener para el nuevo botón.
+        inspectButton.onClick.AddListener(StartInspecting);
     }
 
     // Se ejecuta en cada fotograma para manejar la entrada del teclado que abre y cierra el inventario.
@@ -132,6 +150,12 @@ public class RadialInventoryManager : MonoBehaviour
             Cursor.lockState = CursorLockMode.Locked;
         }
 
+        // Maneja la salida del modo de inspección con la tecla Esc.
+        if (isInspecting && Input.GetKeyDown(KeyCode.Tab))
+        {
+            StopInspecting();
+        }
+
         // Permite cambiar de página si el panel radial está activo.
         if (radialPanel.activeSelf)
         {
@@ -141,6 +165,64 @@ public class RadialInventoryManager : MonoBehaviour
     }
 
     // --- Métodos de gestión del inventario ---
+
+    // Se llama cuando el jugador hace clic en el botón "Inspeccionar".
+    public void StartInspecting()
+    {
+        // Asegurarse de que hay un ítem seleccionado para inspeccionar.
+        if (string.IsNullOrEmpty(lastSelectedItemId))
+        {
+            Debug.LogWarning("No se puede inspeccionar. Ningún ítem seleccionado.");
+            return;
+        }
+
+        // Asegurarse de que el prefab exista.
+        if (!worldItemPrefabs.ContainsKey(lastSelectedItemId))
+        {
+            Debug.LogWarning("El prefab físico para el ítem '" + lastSelectedItemId + "' no se encontró.");
+            return;
+        }
+
+        // Instancia el ítem y le añade el script de rotación.
+        inspectedItemInstance = Instantiate(worldItemPrefabs[lastSelectedItemId], inspectionPoint.position, Quaternion.identity);
+        inspectedItemInstance.AddComponent<ItemInspector>();
+
+        // Desactiva los controles del jugador.
+        if (playerMovement != null)
+        {
+            playerMovement.controlsEnabled = false;
+        }
+
+        // Oculta el panel de inventario y muestra el de inspección.
+        radialPanel.SetActive(false);
+        inspectionCamera.SetActive(true);
+        infoPanel.SetActive(false);
+        isInspecting = true;
+    }
+
+    // Se llama cuando el jugador termina de inspeccionar.
+    public void StopInspecting()
+    {
+        // Destruye la instancia del ítem de inspección.
+        if (inspectedItemInstance != null)
+        {
+            Destroy(inspectedItemInstance);
+            inspectedItemInstance = null;
+        }
+
+        // Reactiva los controles del jugador.
+        if (playerMovement != null)
+        {
+            playerMovement.controlsEnabled = true;
+        }
+
+        // Oculta la cámara de inspección y muestra el inventario de nuevo.
+        inspectionCamera.SetActive(false);
+        radialPanel.SetActive(true);
+        infoPanel.SetActive(true);
+        isInspecting = false;
+    }
+
 
     // Intenta agregar un ítem al inventario, comprobando si hay espacio.
     public bool TryAddItem(string itemName, string pageName = "General")
@@ -259,6 +341,8 @@ public class RadialInventoryManager : MonoBehaviour
 
         if (!pagedItems.ContainsKey(CurrentPage)) return;
 
+        lastSelectedItemId = null;
+
         List<string> items = pagedItems[CurrentPage];
         if (items.Count == 0) return;
 
@@ -315,6 +399,7 @@ public class RadialInventoryManager : MonoBehaviour
         if (index < 0 || index >= items.Count) return;
 
         string selected = items[index];
+        lastSelectedItemId = selected;
         infoPanel.SetActive(true);
         itemNameText.text = selected;
 

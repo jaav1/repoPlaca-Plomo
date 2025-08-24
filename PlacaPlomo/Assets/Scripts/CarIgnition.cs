@@ -61,6 +61,8 @@ public class CarIgnition : MonoBehaviour
             {
                 TurnOff();               // Apaga el coche si estaba encendido
                 ShowPlayerSprite(false); // Oculta el sprite siempre
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
             }
         }
     }
