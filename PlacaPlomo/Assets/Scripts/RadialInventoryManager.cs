@@ -3,92 +3,80 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections.Generic;
+using System.Collections;
 
 // Este script gestiona un sistema de inventario radial con múltiples páginas.
 // Maneja la adición, eliminación y visualización de ítems, así como la interacción con la interfaz de usuario.
 public class RadialInventoryManager : MonoBehaviour
 {
-    [Header("Inspección de Ítems")]
-    public GameObject inspectionCamera; // La cámara que mostrará el objeto.
-    public Transform inspectionPoint; // El punto en el mundo donde aparecerá el ítem.
+    // =================================================================================
+    // REFERENCIAS PÚBLICAS Y ENCABEZADOS
+    // =================================================================================
 
-    [Header("Referencias de UI y Player")]
-    public Button inspectButton; // Referencia al nuevo botón de inspección.
-    public PlayerMovement playerMovement; // Referencia al script PlayerMovement.
-    public RadialInventoryManager radialInventoryManager; // Referencia a este script.
+    [Header("Sistemas Externos")]
+    public PhotoManager photoManager;
 
-    // Variables internas para la lógica de inspección
-    private GameObject inspectedItemInstance; // Almacenará la instancia del ítem que estamos inspeccionando.
-    private bool isInspecting = false;
-
-    private string lastSelectedItemId; // Almacena el nombre del último ítem seleccionado.
-
-    // Variables de la interfaz de usuario que se asignan en el editor de Unity.
-    [Header("UI Básica")]
-    public GameObject radialPanel; // Panel principal del inventario radial.
-    public GameObject slotPrefab; // Prefab para crear los espacios de inventario.
-    public Transform slotContainer; // Contenedor que albergará los slots en la UI.
-
-    // Variables para mostrar detalles de los ítems seleccionados.
-    [Header("Ventana de Información")]
-    public GameObject infoPanel; // Panel de información que muestra el nombre y la descripción del ítem.
-    public TMP_Text itemNameText; // Texto para el nombre del ítem.
-    public TMP_Text itemDescriptionText; // Texto para la descripción del ítem.
-
-    // Sprites y prefabs de los ítems.
-    [Header("Íconos por ítem")]
-    public Sprite llaveSprite; // Icono para el ítem "Llave".
-    public Sprite carkeySprite; // Icono para el ítem "Llave de coche".
-    public Sprite carpetaSprite; // Icono para el ítem "Carpeta".
-
-    // Prefabs de los ítems que se pueden soltar en el mundo del juego.
-    [Header("Prefabs físicos para soltar")]
-    public GameObject llavePrefab; // Prefab físico de la llave.
-    public GameObject carkeyPrefab; // Prefab físico de la llave de coche.
-    public GameObject carpetaPrefab; // Prefab físico de la carpeta.
-
-    // Variables para el panel de confirmación de eliminación.
-    [Header("Confirmación de eliminación")]
-    public GameObject confirmDeletePanel; // Panel que pregunta al jugador si desea eliminar un ítem.
-    public TMP_Text confirmDeleteText; // Texto de confirmación.
-
-    // Texto que muestra el nombre de la página actual del inventario.
-    [Header("UI de página")]
+    [Header("UI General")]
+    public GameObject radialPanel;
+    public GameObject slotPrefab;
+    public Transform slotContainer;
+    public GameObject infoPanel;
+    public TMP_Text itemNameText;
+    public TMP_Text itemDescriptionText;
+    public GameObject confirmDeletePanel;
+    public TMP_Text confirmDeleteText;
     public TMP_Text pageNameText;
+    public Button inspectButton;
 
-    [Header("Inventario")]
-    public int maxSlots = 7; // El número máximo de slots por página.
+    [Header("UI de Cámara Fotográfica")]
+    public GameObject photoPreviewPanel;
+    public Image photoPreviewImage;
+    public TMP_Text instructionText;
+    public Button saveButton;
+    public Button discardButton;
 
-    // Sonido que se reproduce al eliminar un ítem.
-    [Header("Sonido de eliminación")]
+    [Header("Inspección de Ítems")]
+    public GameObject inspectionCamera;
+    public Transform inspectionPoint;
+
+    [Header("Referencias de Jugador y Audio")]
+    public PlayerMovement playerMovement;
+    public AudioSource audioSource;
     public AudioClip rubberHoseDeleteSound;
-    private AudioSource audioSource;
+    public AudioClip cameraShutterSound;
 
-    // --- Variables internas para la lógica del inventario ---
+    [Header("Datos de Ítems y Páginas")]
+    public int maxSlots = 7;
+    public Sprite llaveSprite;
+    public Sprite carkeySprite;
+    public Sprite carpetaSprite;
+    // Falta asignar el sprite de la camara y la carpeta de fotos.
+    public Sprite camaraSprite;
+    public Sprite fotoSprite;
+    public GameObject llavePrefab;
+    public GameObject carkeyPrefab;
+    public GameObject carpetaPrefab;
+    // Falta asignar el prefab de la camara.
+    public GameObject camaraPrefab;
 
-    // Almacena los ítems por página usando un diccionario.
-    private Dictionary<string, List<string>> pagedItems = new Dictionary<string, List<string>>();
-    // Mantiene el orden de las páginas del inventario.
-    private List<string> pageOrder = new List<string>();
-    // Índice de la página actual.
-    private int currentPageIndex = 0;
-    // Almacena el ítem que se va a eliminar hasta que se confirme.
+    // =================================================================================
+    // VARIABLES INTERNAS Y PRIVADAS
+    // =================================================================================
+
+    private bool isInspecting = false;
+    private bool isCameraActive = false;
+    private string lastSelectedItemId;
+    private GameObject inspectedItemInstance;
     private string pendingItemToRemove;
 
-    // Diccionarios para almacenar descripciones, íconos y prefabs de los ítems.
-    private Dictionary<string, string> itemDescriptions = new Dictionary<string, string>()
-    {
-        { "Llave", "Una llave de bronce. Parece encajar en una cerradura antigua." },
-        { "Llave de coche", "Sin esta llave no podras conducir." },
-        { "Carpeta", "Al parecer hay mucha información importante aquí." }
-    };
+    private Dictionary<string, List<string>> pagedItems = new Dictionary<string, List<string>>();
+    private List<string> pageOrder = new List<string>();
+    private int currentPageIndex = 0;
+
+    private Dictionary<string, string> itemDescriptions = new Dictionary<string, string>();
     private Dictionary<string, Sprite> itemIcons = new Dictionary<string, Sprite>();
     private Dictionary<string, GameObject> worldItemPrefabs = new Dictionary<string, GameObject>();
 
-    // Propiedad que devuelve el nombre de la página actual.
-    string CurrentPage => pageOrder.Count > 0 ? pageOrder[currentPageIndex] : "";
-
-    // Posiciones predefinidas para los slots del inventario radial.
     private Vector2[] slotPositions = new Vector2[]
     {
         new Vector2(-50, 91),
@@ -100,134 +88,244 @@ public class RadialInventoryManager : MonoBehaviour
         new Vector2(-105, 18)
     };
 
-    // --- Métodos de ciclo de vida ---
+    // Propiedad que devuelve el nombre de la página actual.
+    string CurrentPage => pageOrder.Count > 0 ? pageOrder[currentPageIndex] : "";
 
-    // Se llama al inicio para inicializar diccionarios y componentes de audio.
+    // =================================================================================
+    // MÉTODOS DE CICLO DE VIDA DE UNITY
+    // =================================================================================
+
     void Start()
     {
-        // Llena los diccionarios de ítems con los sprites y prefabs correspondientes.
-        itemIcons.Add("Llave", llaveSprite);
-        itemIcons.Add("Llave de coche", carkeySprite);
-        itemIcons.Add("Carpeta", carpetaSprite);
-
-        worldItemPrefabs.Add("Llave", llavePrefab);
-        worldItemPrefabs.Add("Llave de coche", carkeyPrefab);
-        worldItemPrefabs.Add("Carpeta", carpetaPrefab);
-
-        // Agrega un componente AudioSource al objeto del juego.
-        audioSource = gameObject.AddComponent<AudioSource>();
-        audioSource.playOnAwake = false;
-
-        // Desactiva el panel de confirmación de eliminación al inicio.
+        InitializeItemData();
         confirmDeletePanel.SetActive(false);
+        if (inspectButton != null)
+        {
+            inspectButton.onClick.AddListener(HandleButtonClick);
+        }
 
-        // Agrega el listener para el nuevo botón.
-        inspectButton.onClick.AddListener(StartInspecting);
+        // Asignar listeners a los nuevos botones de la cámara
+        if (saveButton != null)
+        {
+            saveButton.onClick.AddListener(SavePhoto);
+        }
+        if (discardButton != null)
+        {
+            discardButton.onClick.AddListener(DiscardPhoto);
+        }
     }
 
-    // Se ejecuta en cada fotograma para manejar la entrada del teclado que abre y cierra el inventario.
     void Update()
     {
-        // Activa el panel del inventario al presionar Tab.
-        if (Input.GetKeyDown(KeyCode.Tab))
+        HandleInput();
+    }
+
+    // =================================================================================
+    // LÓGICA PRINCIPAL DE LA CÁMARA
+    // =================================================================================
+
+    public void StartCameraMode()
+    {
+        radialPanel.SetActive(false);
+        infoPanel.SetActive(false);
+        if (playerMovement != null)
         {
-            radialPanel.SetActive(true);
-            infoPanel.SetActive(false);
-            // Muestra y desbloquea el cursor para la interacción con la UI.
-            Cursor.visible = true;
-            Cursor.lockState = CursorLockMode.None;
-            RefreshInventoryUI();
+            playerMovement.controlsEnabled = false;
+        }
+        instructionText.gameObject.SetActive(true);
+        isCameraActive = true;
+    }
+
+    private IEnumerator TakeScreenshotAndPreview()
+    {
+        instructionText.gameObject.SetActive(false);
+
+        if (cameraShutterSound != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(cameraShutterSound);
         }
 
-        // Desactiva el panel del inventario al soltar Tab.
-        if (Input.GetKeyUp(KeyCode.Tab))
-        {
-            radialPanel.SetActive(false);
-            infoPanel.SetActive(false);
-            confirmDeletePanel.SetActive(false);
-            // Oculta y bloquea el cursor para volver al control del juego.
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
-        }
+        yield return new WaitForEndOfFrame();
 
-        // Maneja la salida del modo de inspección con la tecla Esc.
-        if (isInspecting && Input.GetKeyDown(KeyCode.Tab))
-        {
-            StopInspecting();
-        }
+        Texture2D screenshot = ScreenCapture.CaptureScreenshotAsTexture();
+        Sprite photoSprite = Sprite.Create(screenshot, new Rect(0, 0, screenshot.width, screenshot.height), new Vector2(0.5f, 0.5f));
 
-        // Permite cambiar de página si el panel radial está activo.
-        if (radialPanel.activeSelf)
+        photoPreviewImage.sprite = photoSprite;
+        photoPreviewPanel.SetActive(true);
+
+        saveButton.gameObject.SetActive(true);
+        discardButton.gameObject.SetActive(true);
+
+        isCameraActive = false;
+    }
+
+    public void SavePhoto()
+    {
+        Sprite photo = photoPreviewImage.sprite;
+        if (photo == null || photoManager == null) return;
+
+        // Llama al PhotoManager para guardar la foto en el disco.
+        string photoFileName = photoManager.SavePhoto(photo);
+
+        // Usa el nombre del archivo como identificador del ítem.
+        AddItem(photoFileName, "Fotos");
+
+        // En el diccionario de íconos, usa el nombre de archivo como clave y el Sprite como valor.
+        // Esto es temporal; en el siguiente paso lo cargaremos al iniciar.
+        itemIcons[photoFileName] = photo;
+
+        // Oculta el panel de previsualización.
+        photoPreviewPanel.SetActive(false);
+
+        // Vuelve al inventario radial.
+        radialPanel.SetActive(true);
+
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
+        // Reactiva los controles del jugador.
+        playerMovement.controlsEnabled = true;
+
+        // Limpia la imagen de la previsualización para el siguiente uso.
+        photoPreviewImage.sprite = null;
+    }
+
+    public void DiscardPhoto()
+    {
+        photoPreviewPanel.SetActive(false);
+        radialPanel.SetActive(true);
+        isCameraActive = true;
+        instructionText.gameObject.SetActive(true);
+        photoPreviewImage.sprite = null;
+    }
+
+    // =================================================================================
+    // LÓGICA DE INSPECCIÓN DE ÍTEMS
+    // =================================================================================
+
+    public void HandleButtonClick()
+    {
+        if (lastSelectedItemId == "Camara Fotografica")
         {
-            if (Input.GetKeyDown(KeyCode.E)) NextPage();
-            if (Input.GetKeyDown(KeyCode.Q)) PreviousPage();
+            StartCameraMode();
+        }
+        else
+        {
+            StartInspecting();
         }
     }
 
-    // --- Métodos de gestión del inventario ---
-
-    // Se llama cuando el jugador hace clic en el botón "Inspeccionar".
     public void StartInspecting()
     {
-        // Asegurarse de que hay un ítem seleccionado para inspeccionar.
-        if (string.IsNullOrEmpty(lastSelectedItemId))
+        if (string.IsNullOrEmpty(lastSelectedItemId) || !worldItemPrefabs.ContainsKey(lastSelectedItemId))
         {
-            Debug.LogWarning("No se puede inspeccionar. Ningún ítem seleccionado.");
+            Debug.LogWarning("No se puede inspeccionar. Ítem no válido o prefab no encontrado.");
             return;
         }
 
-        // Asegurarse de que el prefab exista.
-        if (!worldItemPrefabs.ContainsKey(lastSelectedItemId))
-        {
-            Debug.LogWarning("El prefab físico para el ítem '" + lastSelectedItemId + "' no se encontró.");
-            return;
-        }
-
-        // Instancia el ítem y le añade el script de rotación.
         inspectedItemInstance = Instantiate(worldItemPrefabs[lastSelectedItemId], inspectionPoint.position, Quaternion.identity);
         inspectedItemInstance.AddComponent<ItemInspector>();
-
-        // Desactiva los controles del jugador.
         if (playerMovement != null)
         {
             playerMovement.controlsEnabled = false;
         }
 
-        // Oculta el panel de inventario y muestra el de inspección.
         radialPanel.SetActive(false);
         inspectionCamera.SetActive(true);
         infoPanel.SetActive(false);
         isInspecting = true;
     }
 
-    // Se llama cuando el jugador termina de inspeccionar.
     public void StopInspecting()
     {
-        // Destruye la instancia del ítem de inspección.
         if (inspectedItemInstance != null)
         {
             Destroy(inspectedItemInstance);
             inspectedItemInstance = null;
         }
-
-        // Reactiva los controles del jugador.
         if (playerMovement != null)
         {
             playerMovement.controlsEnabled = true;
         }
 
-        // Oculta la cámara de inspección y muestra el inventario de nuevo.
         inspectionCamera.SetActive(false);
         radialPanel.SetActive(true);
         infoPanel.SetActive(true);
         isInspecting = false;
     }
 
+    // =================================================================================
+    // GESTIÓN DE INVENTARIO Y UI
+    // =================================================================================
 
-    // Intenta agregar un ítem al inventario, comprobando si hay espacio.
+    private void HandleInput()
+    {
+        if (Input.GetKeyDown(KeyCode.Tab) && !isCameraActive && !photoPreviewPanel.activeSelf)
+        {
+            radialPanel.SetActive(true);
+            infoPanel.SetActive(false);
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+            RefreshInventoryUI();
+        }
+
+        if (Input.GetKeyUp(KeyCode.Tab) && !isInspecting && !isCameraActive && !photoPreviewPanel.activeSelf)
+        {
+            radialPanel.SetActive(false);
+            infoPanel.SetActive(false);
+            confirmDeletePanel.SetActive(false);
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+
+        if (radialPanel.activeSelf)
+        {
+            if (Input.GetKeyDown(KeyCode.E)) NextPage();
+            if (Input.GetKeyDown(KeyCode.Q)) PreviousPage();
+        }
+
+        if (isInspecting && Input.GetKeyDown(KeyCode.Tab))
+        {
+            StopInspecting();
+        }
+
+        if (isCameraActive && Input.GetKeyDown(KeyCode.Space))
+        {
+            StartCoroutine(TakeScreenshotAndPreview());
+        }
+
+        if (photoPreviewPanel.activeSelf && Input.GetKeyDown(KeyCode.Tab))
+        {
+            DiscardPhoto();
+        }
+    }
+
+    private void InitializeItemData()
+    {
+        itemIcons.Add("Llave", llaveSprite);
+        itemIcons.Add("Llave de coche", carkeySprite);
+        itemIcons.Add("Carpeta", carpetaSprite);
+        itemIcons.Add("Camara Fotografica", camaraSprite);
+
+        itemDescriptions.Add("Llave", "Una llave de bronce. Parece encajar en una cerradura antigua.");
+        itemDescriptions.Add("Llave de coche", "Sin esta llave no podras conducir.");
+        itemDescriptions.Add("Carpeta", "Al parecer hay mucha información importante aquí.");
+        itemDescriptions.Add("Camara Fotografica", "Una vieja cámara que puede capturar imágenes.");
+
+        worldItemPrefabs.Add("Llave", llavePrefab);
+        worldItemPrefabs.Add("Llave de coche", carkeyPrefab);
+        worldItemPrefabs.Add("Carpeta", carpetaPrefab);
+        worldItemPrefabs.Add("Camara Fotografica", camaraPrefab);
+
+        if (!audioSource)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+        }
+    }
+
     public bool TryAddItem(string itemName, string pageName = "General")
     {
-        // Crea una nueva página si no existe.
         if (!pagedItems.ContainsKey(pageName))
         {
             pagedItems.Add(pageName, new List<string>());
@@ -236,20 +334,17 @@ public class RadialInventoryManager : MonoBehaviour
 
         var pageList = pagedItems[pageName];
 
-        // Comprueba si la página está llena y, si es así, muestra un mensaje.
         if (pageList.Count >= maxSlots)
         {
             ShowInventoryFullMessage(itemName, pageName);
             return false;
         }
 
-        // Agrega el ítem y actualiza la UI.
         pageList.Add(itemName);
         RefreshInventoryUI();
         return true;
     }
 
-    // Un método alternativo para agregar un ítem, sin valor de retorno booleano.
     public void AddItem(string itemName, string pageName = "General")
     {
         if (!pagedItems.ContainsKey(pageName))
@@ -270,7 +365,6 @@ public class RadialInventoryManager : MonoBehaviour
         RefreshInventoryUI();
     }
 
-    // Muestra un mensaje en el panel de información cuando el inventario está lleno.
     void ShowInventoryFullMessage(string itemName, string pageName)
     {
         infoPanel.SetActive(true);
@@ -279,10 +373,8 @@ public class RadialInventoryManager : MonoBehaviour
         Debug.Log($"Inventario lleno en página {pageName}. No se puede agregar: {itemName}");
     }
 
-    // Elimina un ítem del inventario y lo suelta en el mundo del juego.
     public void RemoveItem(string itemName)
     {
-        // Busca el ítem y lo elimina de la lista.
         if (pagedItems.ContainsKey(CurrentPage) && pagedItems[CurrentPage].Contains(itemName))
         {
             pagedItems[CurrentPage].Remove(itemName);
@@ -292,7 +384,6 @@ public class RadialInventoryManager : MonoBehaviour
             if (rubberHoseDeleteSound != null)
                 audioSource.PlayOneShot(rubberHoseDeleteSound);
 
-            // Crea una instancia del prefab físico del ítem y lo lanza.
             if (worldItemPrefabs.ContainsKey(itemName))
             {
                 Vector3 dropPos = Camera.main.transform.position
@@ -315,62 +406,42 @@ public class RadialInventoryManager : MonoBehaviour
         }
     }
 
-    // Confirma la eliminación de un ítem y cierra el panel de confirmación.
     public void ConfirmDeletion()
     {
         if (!string.IsNullOrEmpty(pendingItemToRemove))
             RemoveItem(pendingItemToRemove);
-
         confirmDeletePanel.SetActive(false);
         pendingItemToRemove = null;
     }
 
-    // Cancela la eliminación y cierra el panel de confirmación.
     public void CancelDeletion()
     {
         confirmDeletePanel.SetActive(false);
         pendingItemToRemove = null;
     }
 
-    // Actualiza la interfaz de usuario del inventario, creando los slots y asignando los íconos.
     void RefreshInventoryUI()
     {
-        // Destruye los slots existentes antes de recrearlos.
         foreach (Transform child in slotContainer)
             Destroy(child.gameObject);
-
         if (!pagedItems.ContainsKey(CurrentPage)) return;
-
         lastSelectedItemId = null;
-
         List<string> items = pagedItems[CurrentPage];
         if (items.Count == 0) return;
-
-        // Actualiza el texto con el nombre de la página.
         if (pageNameText != null)
             pageNameText.text = CurrentPage;
-
-        // Instancia los prefabs de los slots y los configura con los datos de los ítems.
         for (int i = 0; i < items.Count && i < slotPositions.Length; i++)
         {
             string itemName = items[i];
             GameObject slot = Instantiate(slotPrefab, slotContainer);
             slot.name = itemName;
-
-            // Asigna el ícono del ítem.
             Image icon = slot.GetComponentInChildren<Image>();
             if (itemIcons.ContainsKey(itemName))
                 icon.sprite = itemIcons[itemName];
-
-            // Posiciona el slot en la UI.
             RectTransform rt = slot.GetComponent<RectTransform>();
             rt.anchoredPosition = slotPositions[i];
-
             int index = i;
-            // Configura los eventos de clic para seleccionar un ítem.
             slot.GetComponent<Button>().onClick.AddListener(() => SelectItem(index));
-
-            // Configura el evento de clic derecho para la eliminación.
             EventTrigger trigger = slot.AddComponent<EventTrigger>();
             EventTrigger.Entry rightClick = new EventTrigger.Entry
             {
@@ -390,26 +461,31 @@ public class RadialInventoryManager : MonoBehaviour
         }
     }
 
-    // Muestra la información de un ítem seleccionado en el panel de información.
     void SelectItem(int index)
     {
         if (!pagedItems.ContainsKey(CurrentPage)) return;
-
         List<string> items = pagedItems[CurrentPage];
         if (index < 0 || index >= items.Count) return;
-
         string selected = items[index];
         lastSelectedItemId = selected;
         infoPanel.SetActive(true);
         itemNameText.text = selected;
-
+        if (selected == "Camara Fotografica")
+        {
+            inspectButton.gameObject.SetActive(true);
+            inspectButton.GetComponentInChildren<TMP_Text>().text = "Usar";
+        }
+        else
+        {
+            inspectButton.gameObject.SetActive(true);
+            inspectButton.GetComponentInChildren<TMP_Text>().text = "Inspeccionar";
+        }
         if (itemDescriptions.ContainsKey(selected))
             itemDescriptionText.text = itemDescriptions[selected];
         else
             itemDescriptionText.text = "Sin descripción disponible.";
     }
 
-    // Cambia a la siguiente página del inventario.
     public void NextPage()
     {
         if (pageOrder.Count == 0) return;
@@ -417,7 +493,6 @@ public class RadialInventoryManager : MonoBehaviour
         RefreshInventoryUI();
     }
 
-    // Cambia a la página anterior del inventario.
     public void PreviousPage()
     {
         if (pageOrder.Count == 0) return;
@@ -425,16 +500,11 @@ public class RadialInventoryManager : MonoBehaviour
         RefreshInventoryUI();
     }
 
-    // Comprueba si un ítem específico está en el inventario.
     public bool HasItem(string itemName)
     {
-        if (!pagedItems.ContainsKey(CurrentPage))
-            return false;
-
         foreach (var list in pagedItems.Values)
             if (list.Contains(itemName))
                 return true;
-
         return false;
     }
 }
