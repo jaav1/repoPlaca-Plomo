@@ -8,6 +8,7 @@ TagManager:
   - Item
   - Door
   - NPC
+  - HUD
   layers:
   - Default
   - TransparentFX

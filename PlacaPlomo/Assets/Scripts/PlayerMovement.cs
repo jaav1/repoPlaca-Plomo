@@ -78,8 +78,6 @@ public class PlayerMovement : MonoBehaviour
     // Controla la rotación de la cámara del jugador usando el movimiento del ratón.
     private void HandleMouseLook()
     {
-        if (!controlsEnabled) return; // Asegura que solo funcione si los controles están activos.
-
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 

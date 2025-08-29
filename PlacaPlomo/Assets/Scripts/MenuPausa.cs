@@ -3,6 +3,7 @@ using UnityEngine.SceneManagement;
 
 public class MenuPausa : MonoBehaviour
 {
+    public RadialInventoryManager inventoryManager;
     public GameObject ObjetoMenuPausa;
     public bool Pausa = false;
     public GameObject MenuSalir;
@@ -44,7 +45,7 @@ public class MenuPausa : MonoBehaviour
         }
 
         // Obtener todos los sonidos y pausarlos
-        sonidosEnJuego = FindObjectsOfType<AudioSource>();
+        sonidosEnJuego = FindObjectsByType<AudioSource>(FindObjectsSortMode.None);
         foreach (AudioSource sonido in sonidosEnJuego)
         {
             sonido.Pause();
@@ -83,7 +84,18 @@ public class MenuPausa : MonoBehaviour
 
     public void IrAlMenu(string NombreMenu)
     {
-        // Asegúrate de reanudar el juego antes de cambiar de escena
+        // Guarda el juego antes de cambiar de escena.
+        // Llama al método de guardado en GameManager, que se encarga de todo.
+
+        if (GameManager.instancia != null)
+        {
+            GameManager.instancia.GuardarAhora();
+        }
+        else
+        {
+            Debug.LogWarning("El GameManager no se encontró. No se pudo guardar el juego.");
+        }
+
         Time.timeScale = 1;
         SceneManager.LoadScene(NombreMenu);
     }
