@@ -18,5 +18,5 @@ MonoBehaviour:
   options:
   - optionText: "No pretendo acusarlo, pero esto no parece az\xFAcar."
     nextDialogue: {fileID: 11400000, guid: 27699dc7d4aaa4840bab2576ea39c419, type: 2}
-    confianzaDelta: -0.1
-    sospechaDelta: 0.2
+    confianzaDelta: -1
+    sospechaDelta: 2

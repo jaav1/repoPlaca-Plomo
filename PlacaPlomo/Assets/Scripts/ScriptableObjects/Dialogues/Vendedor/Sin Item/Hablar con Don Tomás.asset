@@ -18,13 +18,13 @@ MonoBehaviour:
   options:
   - optionText: "Buenos d\xEDas, solo algunas preguntas sobre su mercanc\xEDa."
     nextDialogue: {fileID: 11400000, guid: 78ac16574a62b7048b690bd5df885e6e, type: 2}
-    confianzaDelta: 0.2
+    confianzaDelta: 2
     sospechaDelta: 0
   - optionText: "Me dijeron que su puesto ha tenido... productos extra\xF1os \xFAltimamente."
     nextDialogue: {fileID: 11400000, guid: 607f0d4b823d8bd44ac7827a87cc3be2, type: 2}
-    confianzaDelta: -0.1
-    sospechaDelta: 0.2
+    confianzaDelta: -1
+    sospechaDelta: 2
   - optionText: "\xBFQu\xE9 puede decirme sobre este polvo blanco en cajas de tomates?"
     nextDialogue: {fileID: 11400000, guid: 2815e0f8bb23c264ca2486c27db5883d, type: 2}
-    confianzaDelta: -0.3
-    sospechaDelta: 0.4
+    confianzaDelta: -3
+    sospechaDelta: 4
