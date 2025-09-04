@@ -18,5 +18,5 @@ MonoBehaviour:
   options:
   - optionText: "Solo quiero la verdad. Proteger\xE9 a su familia."
     nextDialogue: {fileID: 11400000, guid: fdce45bab8f0792428d7ce7bce779da5, type: 2}
-    confianzaDelta: 0.2
+    confianzaDelta: 2
     sospechaDelta: 0

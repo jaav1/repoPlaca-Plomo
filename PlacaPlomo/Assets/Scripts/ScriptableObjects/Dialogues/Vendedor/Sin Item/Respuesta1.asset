@@ -18,5 +18,5 @@ MonoBehaviour:
   options:
   - optionText: "Solo quiero estar seguro, no me gustar\xEDa acusar sin raz\xF3n."
     nextDialogue: {fileID: 11400000, guid: a653cb7645417e84f92e94f5a29223a9, type: 2}
-    confianzaDelta: 0.1
+    confianzaDelta: 1
     sospechaDelta: 0

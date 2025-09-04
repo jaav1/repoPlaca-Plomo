@@ -16,6 +16,8 @@ GameObject:
   - component: {fileID: 582549748775236865}
   - component: {fileID: 9135088715745695885}
   - component: {fileID: 2309347368493113231}
+  - component: {fileID: 1024691011639143462}
+  - component: {fileID: 80525928405507371}
   m_Layer: 0
   m_Name: NPC_Vendedor 1 1
   m_TagString: NPC
@@ -23,22 +25,26 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3792790094638896682
-Transform:
+--- !u!224 &3792790094638896682
+RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4976402113449440852}
-  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.7728057, y: 1.2101908, z: 9.30752}
+  m_LocalPosition: {x: 0, y: 0, z: 9.30752}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3199570682979312945}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -0.7728057, y: 1.2101908}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!33 &4827857976520047581
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -144,8 +150,9 @@ MonoBehaviour:
   defaultDialogue: {fileID: 11400000, guid: e97d8823a0a54fe4ca221856f5e26386, type: 2}
   itemDialogue: {fileID: 11400000, guid: 572e56cf71597ae44bfb63549d0e99d8, type: 2}
   dialogueManager: {fileID: 0}
-  jugadorTieneItem: 0
   mensajeInteraccion: {fileID: 0}
+  nombreItemRequerido: Carpeta
+  inventarioJugador: {fileID: 0}
 --- !u!65 &9135088715745695885
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -183,12 +190,58 @@ MonoBehaviour:
   speakerText: {fileID: 0}
   dialogueText: {fileID: 0}
   optionButtons: []
+  hudRoot: {fileID: 0}
+  relacionBarra: {fileID: 0}
+  iconoIndicador: {fileID: 0}
+  iconoImagen: {fileID: 0}
+  iconoBajo: {fileID: 0}
+  iconoMedio: {fileID: 0}
+  iconoAlto: {fileID: 0}
+  maxValor: 100
+  inicioRelacion: 50
+  bajoThreshold: 30
+  altoThreshold: 70
+  iconMoveSpeed: 10
   cameraControlScript: {fileID: 0}
   playerMovementScript: {fileID: 0}
-  confianzaDelta: 0
-  sospechaDelta: 0
-  confianzaNPC: 0
-  sospechaMercado: 0
+--- !u!222 &1024691011639143462
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4976402113449440852}
+  m_CullTransparentMesh: 1
+--- !u!114 &80525928405507371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4976402113449440852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
 --- !u!1 &8565804799737545650
 GameObject:
   m_ObjectHideFlags: 0
