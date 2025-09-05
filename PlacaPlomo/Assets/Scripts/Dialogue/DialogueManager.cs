@@ -11,10 +11,10 @@ public class DialogueManager : MonoBehaviour
     public Button[] optionButtons;
 
     [Header("HUD permanente")]
-    public GameObject hudRoot;              // HUDPanel
-    public Slider relacionBarra;            // Barra fija
-    public RectTransform iconoIndicador;    // Icono que se mueve
-    public Image iconoImagen;               // Imagen del icono
+    public GameObject hudRoot;
+    public Slider relacionBarra;
+    public RectTransform iconoIndicador;
+    public Image iconoImagen;
     public Sprite iconoBajo;
     public Sprite iconoMedio;
     public Sprite iconoAlto;
@@ -34,7 +34,8 @@ public class DialogueManager : MonoBehaviour
     private Dialogue currentDialogue;
     private bool isDialogueActive = false;
 
-    private float relacion;
+    // CORRECCIÓN: relación pública accesible
+    public float relacion;
     private float _targetIconX = 0f;
 
     void Awake()
@@ -52,7 +53,6 @@ public class DialogueManager : MonoBehaviour
             relacionBarra.minValue = 0f;
             relacionBarra.maxValue = maxValor;
             relacionBarra.value = relacion;
-
             Canvas.ForceUpdateCanvases();
         }
 
@@ -75,6 +75,7 @@ public class DialogueManager : MonoBehaviour
         if (isDialogueActive && Input.GetKeyDown(KeyCode.Escape))
             EndDialogue();
 
+        // Mover icono suavemente
         if (iconoIndicador != null && relacionBarra != null)
         {
             Vector2 pos = iconoIndicador.anchoredPosition;
@@ -136,6 +137,7 @@ public class DialogueManager : MonoBehaviour
 
         DialogueOption selected = currentDialogue.options[index];
 
+        // Cambiar relación según la opción
         float delta = selected.confianzaDelta - selected.sospechaDelta;
         AddRelacionDelta(delta);
 
@@ -190,7 +192,6 @@ public class DialogueManager : MonoBehaviour
         float normalized = (maxValor > 0f) ? (relacion / maxValor) : 0f;
 
         RectTransform sliderRect = relacionBarra.GetComponent<RectTransform>();
-
         float halfWidth = sliderRect.rect.width * 0.5f;
         float halfIcon = (iconoIndicador != null) ? iconoIndicador.rect.width * 0.5f : 0f;
 
@@ -208,13 +209,13 @@ public class DialogueManager : MonoBehaviour
         {
             if (iconoBajo != null) iconoImagen.sprite = iconoBajo;
         }
-        else if (relacion <= altoThreshold)
+        else if (relacion >= altoThreshold)
         {
-            if (iconoMedio != null) iconoImagen.sprite = iconoMedio;
+            if (iconoAlto != null) iconoImagen.sprite = iconoAlto;
         }
         else
         {
-            if (iconoAlto != null) iconoImagen.sprite = iconoAlto;
+            if (iconoMedio != null) iconoImagen.sprite = iconoMedio;
         }
     }
 
