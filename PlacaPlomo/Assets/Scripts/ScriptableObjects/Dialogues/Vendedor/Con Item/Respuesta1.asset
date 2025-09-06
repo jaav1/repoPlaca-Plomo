@@ -18,5 +18,5 @@ MonoBehaviour:
   options:
   - optionText: "\xBFPuede ayudarme a descubrir qui\xE9n est\xE1 detr\xE1s?"
     nextDialogue: {fileID: 11400000, guid: bdd94ef27f3861b418f8807bdab69937, type: 2}
-    confianzaDelta: 0.1
-    sospechaDelta: 0.1
+    confianzaDelta: 1
+    sospechaDelta: 1

@@ -18,8 +18,8 @@ MonoBehaviour:
   options:
   - optionText: "Encontr\xE9 esto detr\xE1s de sus cajas. No parece az\xFAcar com\xFAn."
     nextDialogue: {fileID: 11400000, guid: 31e8cb48cf9a3e84a957b51c9ce8026f, type: 2}
-    confianzaDelta: -0.2
-    sospechaDelta: 0.5
+    confianzaDelta: -2
+    sospechaDelta: 5
   - optionText: "Los an\xE1lisis no mienten, Don Tom\xE1s. \xBFVa a colaborar o no?"
     nextDialogue: {fileID: 11400000, guid: e2e06233ba9d5c84b930d88677c0f79b, type: 2}
     confianzaDelta: 0.1

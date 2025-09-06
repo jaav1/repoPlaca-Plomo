@@ -14,7 +14,6 @@ public class CarIgnition : MonoBehaviour
     [SerializeField] private HotwirePromptUI hotwirePromptUI;
 
     private RadialInventoryManager inventory;
-    private bool playerInRange = false;
     private bool isOn = false;
     private bool hotwireCompleted = false; // único flag de encendido forzado
 
@@ -44,48 +43,6 @@ public class CarIgnition : MonoBehaviour
         Invoke(nameof(InitializeCar), 0.1f);
     }
 
-    private void Update()
-    {
-        if (playerInRange)
-        {
-            // Presiona E para intentar arrancar el coche
-            if (Input.GetKeyDown(KeyCode.E))
-            {
-                ShowPlayerSprite(true); // Aparece el sprite al subirse al coche
-                if (!isOn)
-                    TryIgnite(); // Intenta arrancar el coche
-            }
-
-            // Presiona F para bajarse del coche, sin importar si arrancó
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                TurnOff();               // Apaga el coche si estaba encendido
-                ShowPlayerSprite(false); // Oculta el sprite siempre
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-            }
-        }
-    }
-
-    void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("Player"))
-            playerInRange = true;
-    }
-
-    void OnTriggerExit(Collider other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            playerInRange = false;
-
-            // Oculta el panel de encendido forzado al salir del coche
-            if (hotwirePromptUI != null)
-                hotwirePromptUI.Hide();
-        }
-    }
-
-
     #endregion
 
     #region Funciones de Control del Coche
@@ -106,7 +63,8 @@ public class CarIgnition : MonoBehaviour
         carController.StopDriving();
     }
 
-    private void TryIgnite()
+    // Método ahora público para ser llamado por VehicleInteraction
+    public void TryIgnite()
     {
         bool tieneLlave = string.IsNullOrEmpty(requiredKey) ||
                           (inventory != null && inventory.HasItem(requiredKey));
@@ -132,7 +90,6 @@ public class CarIgnition : MonoBehaviour
         carController.ignitionAuthorized = true;
         carController.StartDriving();
 
-        // Siempre activamos el sprite del jugador al encender el coche
         ShowPlayerSprite(true);
 
         if (ignitionSound != null)
@@ -141,14 +98,13 @@ public class CarIgnition : MonoBehaviour
         Debug.Log("?? Coche encendido correctamente");
     }
 
-
-    private void TurnOff()
+    // Método ahora público para ser llamado por VehicleInteraction
+    public void TurnOff()
     {
         isOn = false;
         carController.ignitionAuthorized = false;
         carController.StopDriving();
 
-        // Asegura que se revalida siempre que intentes arrancar otra vez
         Debug.Log("?? Coche apagado.");
     }
 

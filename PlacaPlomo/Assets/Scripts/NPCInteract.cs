@@ -3,18 +3,24 @@ using UnityEngine;
 public class NPCInteract : MonoBehaviour
 {
     [Header("Diálogos")]
-    public Dialogue defaultDialogue;      // Diálogo por defecto
-    public Dialogue itemDialogue;         // Diálogo si el jugador tiene el ítem
+    public Dialogue defaultDialogue;
+    public Dialogue itemDialogue;
+    public Dialogue desconfianzaDialogue;
+    public Dialogue confianzaAltaDialogue;
     public DialogueManager dialogueManager;
 
     [Header("Interacción UI")]
-    public GameObject mensajeInteraccion; // "Presiona E para hablar"
+    public GameObject mensajeInteraccion;
 
-    [Header("Ítem requerido (nombre EXACTO como en tu inventario)")]
+    [Header("Ítem requerido (nombre EXACTO)")]
     public string nombreItemRequerido = "Carpeta";
 
-    [Tooltip("Asigna el inventario del jugador aquí. Si lo dejas vacío, el script lo buscará automáticamente.")]
-    public RadialInventoryManager inventarioJugador;
+    [Header("Gestos / Animaciones")]
+    public Animator animator;
+    public SpriteRenderer portraitRenderer; // Sprite del NPC
+    public Sprite portraitNeutral;
+    public Sprite portraitHappy;
+    public Sprite portraitAngry;
 
     private bool jugadorCerca = false;
 
@@ -24,67 +30,97 @@ public class NPCInteract : MonoBehaviour
         if (!dialogueManager) dialogueManager = FindFirstObjectByType<DialogueManager>();
     }
 
-    private void Start()
+    private void Update()
     {
-        // Respaldo: si no está asignado, intenta encontrar uno en la escena
-        if (!inventarioJugador)
+        if (!jugadorCerca) return;
+
+        // Mostrar mensaje solo si no hay diálogo activo
+        if (mensajeInteraccion && (!dialogueManager || !dialogueManager.IsDialogueActive()))
+            mensajeInteraccion.SetActive(true);
+
+        // Actualizar sprite y animación según relación
+        UpdateExpression();
+
+        // Detectar E para iniciar diálogo
+        if (Input.GetKeyDown(KeyCode.E) && dialogueManager)
         {
-            inventarioJugador = FindFirstObjectByType<RadialInventoryManager>();
-            if (!inventarioJugador)
-                Debug.LogWarning("[NPCInteract] No se encontró RadialInventoryManager en la escena. Puedes asignarlo en el inspector.");
+            IniciarDialogoSegunRelacion();
         }
     }
 
-    private void Update()
+    private void UpdateExpression()
     {
-        if (!jugadorCerca || !Input.GetKeyDown(KeyCode.E)) return;
+        if (portraitRenderer == null || dialogueManager == null) return;
 
-        if (!dialogueManager)
+        float relacionActual = dialogueManager.relacion; // usar propiedad pública de DialogueManager
+        if (relacionActual <= dialogueManager.bajoThreshold)
+            SetExpression(2); // enojado
+        else if (relacionActual >= dialogueManager.altoThreshold)
+            SetExpression(1); // feliz
+        else
+            SetExpression(0); // neutral
+    }
+
+    private void IniciarDialogoSegunRelacion()
+    {
+        bool tieneItem = false;
+        if (!string.IsNullOrEmpty(nombreItemRequerido) && TryGetComponent(out RadialInventoryManager inventarioJugador))
+            tieneItem = inventarioJugador.HasItem(nombreItemRequerido);
+
+        float relacion = dialogueManager.relacion;
+
+        // Determinar diálogo y expresión según la relación
+        if (relacion <= dialogueManager.bajoThreshold && desconfianzaDialogue != null)
         {
-            Debug.LogWarning("[NPCInteract] DialogueManager no asignado.");
-            return;
+            SetExpression(2); // enojado
+            dialogueManager.StartDialogue(desconfianzaDialogue);
         }
-
-        bool tieneItem = inventarioJugador && inventarioJugador.HasItem(nombreItemRequerido);
-        Debug.Log($"[NPCInteract] Revisión de ítem -> requerido: '{nombreItemRequerido}' | tieneItem={tieneItem} | inventario={(inventarioJugador ? "OK" : "NULL")}");
-
-        if (tieneItem && itemDialogue)
+        else if (relacion >= dialogueManager.altoThreshold && confianzaAltaDialogue != null)
         {
+            SetExpression(1); // feliz
+            dialogueManager.StartDialogue(confianzaAltaDialogue);
+        }
+        else if (tieneItem && itemDialogue != null)
+        {
+            SetExpression(0); // neutral
             dialogueManager.StartDialogue(itemDialogue);
         }
-        else if (defaultDialogue)
+        else if (defaultDialogue != null)
         {
+            SetExpression(0); // neutral
             dialogueManager.StartDialogue(defaultDialogue);
-        }
-        else
-        {
-            Debug.LogWarning("[NPCInteract] No hay diálogos asignados.");
         }
 
         if (mensajeInteraccion) mensajeInteraccion.SetActive(false);
     }
 
+    private void SetExpression(int expr)
+    {
+        // Cambiar animación
+        if (animator != null)
+            animator.SetInteger("Expression", expr);
+
+        // Cambiar sprite
+        if (portraitRenderer != null)
+        {
+            switch (expr)
+            {
+                case 0: portraitRenderer.sprite = portraitNeutral; break;
+                case 1: portraitRenderer.sprite = portraitHappy; break;
+                case 2: portraitRenderer.sprite = portraitAngry; break;
+            }
+        }
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("Player")) return;
-
         jugadorCerca = true;
-
-        // Captura el inventario desde el propio Player que entró al trigger
-        if (!inventarioJugador)
-        {
-            inventarioJugador = other.GetComponentInParent<RadialInventoryManager>();
-            if (!inventarioJugador)
-                inventarioJugador = other.GetComponent<RadialInventoryManager>();
-        }
-
-        if (mensajeInteraccion) mensajeInteraccion.SetActive(true);
     }
 
     private void OnTriggerExit(Collider other)
     {
         if (!other.CompareTag("Player")) return;
-
         jugadorCerca = false;
 
         if (dialogueManager && dialogueManager.IsDialogueActive())

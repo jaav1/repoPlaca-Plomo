@@ -19,4 +19,4 @@ MonoBehaviour:
   - optionText: "Lo prometo. D\xEDgame todo lo que sabe."
     nextDialogue: {fileID: 11400000, guid: 29bafd28a69e1d7448e2c2de9b1c6257, type: 2}
     confianzaDelta: 0
-    sospechaDelta: 0.1
+    sospechaDelta: 1
