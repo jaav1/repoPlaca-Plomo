@@ -6,9 +6,6 @@ public class VehicleInteraction : MonoBehaviour
 {
     // === REFERENCIAS EN EL INSPECTOR ===
     [Header("Referencias de Cámaras y Puntos")]
-    public Camera playerCamera;
-    public Camera carCamera;
-    public Camera inspectionCamera; // Nueva cámara para inspección
     public Transform entryPoint;
     public Transform interiorCameraPoint; // Punto central para la cámara de inspección
 
@@ -30,6 +27,8 @@ public class VehicleInteraction : MonoBehaviour
     // Referencaia para controlar el UI de encendido forzado
     [SerializeField] private HotwirePromptUI hotwirePromptUI;
 
+    public CameraManager cameraManager;
+
     // === ESTADOS INTERNOS ===
     private bool playerNearby = false;
     private bool isPlayerInside = false;
@@ -43,16 +42,12 @@ public class VehicleInteraction : MonoBehaviour
 
     void Start()
     {
-        // Asegurarse de que los paneles están desactivados al inicio
         interactionPanel.SetActive(false);
         inspectionPanel.SetActive(false);
         if (inspectionCanvas != null)
             inspectionCanvas.gameObject.SetActive(false);
 
-        // Desactiva el UI de encendido forzado al inicio
         if (hotwirePromptUI != null) hotwirePromptUI.Hide();
-        if (hotwirePromptUI != null) hotwirePromptUI.Hide();
-        
     }
 
     void Update()
@@ -92,7 +87,6 @@ public class VehicleInteraction : MonoBehaviour
             playerMovement = player.GetComponent<PlayerMovement>();
             playerNearby = true;
             ShowInteractionPrompt(true);
-            Debug.Log("Jugador detectado. Player reference: " + (player != null));
         }
     }
 
@@ -123,15 +117,17 @@ public class VehicleInteraction : MonoBehaviour
     {
         isPlayerInside = true;
 
-        if (player != null) player.SetActive(false);
         if (playerMovement != null) playerMovement.enabled = false;
 
-        playerCamera.gameObject.SetActive(false);
-        carCamera.gameObject.SetActive(true);
-        inspectionCamera.gameObject.SetActive(false);
+        if (player != null) player.GetComponent<Renderer>().enabled = false;
+
+        // Llamamos al Administrador de Cámaras para hacer el cambio
+        if (cameraManager != null) cameraManager.SwitchToCarCamera();
 
         ShowInteractionPrompt(false);
         carIgnition.TryIgnite();
+
+        carIgnition.ShowPlayerSprite(true);
     }
 
     public void ExitVehicle()
@@ -141,31 +137,33 @@ public class VehicleInteraction : MonoBehaviour
         if (player != null)
         {
             player.transform.position = entryPoint.position;
-            player.SetActive(true);
+            if (playerMovement != null) playerMovement.enabled = true;
+            if (player != null) player.GetComponent<Renderer>().enabled = true;
         }
-        if (playerMovement != null) playerMovement.enabled = true;
 
-        carCamera.gameObject.SetActive(false);
-        playerCamera.gameObject.SetActive(true);
-        inspectionCamera.gameObject.SetActive(false);
+        // Llamamos al Administrador de Cámaras para volver a la cámara del jugador
+        if (cameraManager != null) cameraManager.SwitchToPlayerCamera();
 
-        // Oculta todos los paneles de UI relacionados con el coche
         interactionPanel.SetActive(false);
         if (hotwirePromptUI != null) hotwirePromptUI.Hide();
-
-        // **¡NUEVAS LÍNEAS!** Oculta los paneles de mini-puzzles
         if (cablePuzzlePanel != null) cablePuzzlePanel.SetActive(false);
         if (fusePuzzlePanel != null) fusePuzzlePanel.SetActive(false);
 
         carIgnition.TurnOff();
+
+        carIgnition.ShowPlayerSprite(false);
+
+        // Congela el cursor y lo hace invisible
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     private void EnterInspectionMode()
     {
         isInspecting = true;
 
-        if (player != null) player.SetActive(false);
         if (playerMovement != null) playerMovement.enabled = false;
+        if (player != null) player.GetComponent<Renderer>().enabled = false;
 
         ShowInteractionPrompt(false);
         if (inspectionCanvas != null)
@@ -173,12 +171,15 @@ public class VehicleInteraction : MonoBehaviour
 
         inspectionPanel.SetActive(true);
 
-        playerCamera.gameObject.SetActive(false);
-        carCamera.gameObject.SetActive(false);
-        inspectionCamera.gameObject.SetActive(true);
+        // Llamamos al Administrador de Cámaras para hacer el cambio
+        if (cameraManager != null) cameraManager.SwitchToInspectionCamera();
 
-        inspectionCamera.transform.position = interiorCameraPoint.position;
-        inspectionCamera.transform.rotation = interiorCameraPoint.rotation;
+        // Resto de la lógica de inspección
+        if (cameraManager != null)
+        {
+            cameraManager.inspectionCamera.transform.position = interiorCameraPoint.position;
+            cameraManager.inspectionCamera.transform.rotation = interiorCameraPoint.rotation;
+        }
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -190,12 +191,11 @@ public class VehicleInteraction : MonoBehaviour
         if (inspectionCanvas != null)
             inspectionCanvas.gameObject.SetActive(false);
 
-        if (player != null) player.SetActive(true);
         if (playerMovement != null) playerMovement.enabled = true;
+        if (player != null) player.GetComponent<Renderer>().enabled = true;
 
-        playerCamera.gameObject.SetActive(true);
-        carCamera.gameObject.SetActive(false);
-        inspectionCamera.gameObject.SetActive(false);
+        // Llamamos al Administrador de Cámaras para volver a la cámara del jugador
+        if (cameraManager != null) cameraManager.SwitchToPlayerCamera();
 
         ShowInteractionPrompt(true);
 

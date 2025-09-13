@@ -47,7 +47,7 @@ public class CarIgnition : MonoBehaviour
 
     #region Funciones de Control del Coche
 
-    private void ShowPlayerSprite(bool show)
+    public void ShowPlayerSprite(bool show)
     {
         if (playerSpriteInCar != null)
             playerSpriteInCar.SetActive(show);
