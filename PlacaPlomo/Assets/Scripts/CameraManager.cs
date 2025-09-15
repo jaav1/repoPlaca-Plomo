@@ -9,12 +9,19 @@ public class CameraManager : MonoBehaviour
     public Camera inspectionCamera;
     public Camera bgInspectionCamera; // ¡NUEVA CÁMARA!
 
+    // Métodos para cambiar de cámara
     public void SwitchToPlayerCamera()
     {
         playerCamera.gameObject.SetActive(true);
         carCamera.gameObject.SetActive(false);
         inspectionCamera.gameObject.SetActive(false);
         bgInspectionCamera.gameObject.SetActive(false);
+
+        // Activa el AudioListener en la cámara del jugador
+        playerCamera.GetComponent<AudioListener>().enabled = true;
+        carCamera.GetComponent<AudioListener>().enabled = false;
+        inspectionCamera.GetComponent<AudioListener>().enabled = false;
+        bgInspectionCamera.GetComponent<AudioListener>().enabled = false;
     }
 
     public void SwitchToCarCamera()
@@ -23,6 +30,12 @@ public class CameraManager : MonoBehaviour
         carCamera.gameObject.SetActive(true);
         inspectionCamera.gameObject.SetActive(false);
         bgInspectionCamera.gameObject.SetActive(false);
+
+        // Activa el AudioListener en la cámara del coche
+        playerCamera.GetComponent<AudioListener>().enabled = false;
+        carCamera.GetComponent<AudioListener>().enabled = true;
+        inspectionCamera.GetComponent<AudioListener>().enabled = false;
+        bgInspectionCamera.GetComponent<AudioListener>().enabled = false;
     }
 
     public void SwitchToInspectionCamera()
@@ -32,5 +45,11 @@ public class CameraManager : MonoBehaviour
         carCamera.gameObject.SetActive(false);
         inspectionCamera.gameObject.SetActive(true);
         bgInspectionCamera.gameObject.SetActive(true);
+
+        // Activa el AudioListener en la cámara de inspección
+        playerCamera.GetComponent<AudioListener>().enabled = false;
+        carCamera.GetComponent<AudioListener>().enabled = false;
+        inspectionCamera.GetComponent<AudioListener>().enabled = true;
+        bgInspectionCamera.GetComponent<AudioListener>().enabled = false;
     }
 }

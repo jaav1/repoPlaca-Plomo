@@ -14,6 +14,7 @@ public class VehicleInteraction : MonoBehaviour
     public GameObject interactionPanel; // Panel para el texto y las opciones (Presiona E/F)
     public GameObject inspectionPanel; // El panel con la RawImage de la cámara de inspección
     public Canvas inspectionCanvas; // Referencia al Canvas de inspección**
+    public RawImage inspectionRawImage;
 
     public GameObject cablePuzzlePanel;
     public GameObject fusePuzzlePanel;
@@ -65,7 +66,45 @@ public class VehicleInteraction : MonoBehaviour
             {
                 ExitInspectionMode();
             }
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                Vector2 localPoint;
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    inspectionRawImage.rectTransform,
+                    Input.mousePosition,
+                    null, // Este campo es para la cámara si usas un Canvas que no está en Screen Space - Overlay
+                    out localPoint
+                );
+
+                // Normaliza el punto a un valor de 0 a 1
+                Vector2 normalizedPoint = new Vector2(
+                    (localPoint.x + inspectionRawImage.rectTransform.rect.width / 2) / inspectionRawImage.rectTransform.rect.width,
+                    (localPoint.y + inspectionRawImage.rectTransform.rect.height / 2) / inspectionRawImage.rectTransform.rect.height
+                );
+
+                // Crea el rayo desde la cámara de inspección usando las coordenadas remapeadas
+                Ray ray = cameraManager.inspectionCamera.ViewportPointToRay(normalizedPoint);
+                RaycastHit hit;
+
+                if (Physics.Raycast(ray, out hit))
+                {
+                    // Resto de la lógica (ClueObject, etc.)
+                    Debug.Log("El rayo chocó con: " + hit.collider.name);
+                    ClueObject clue = hit.collider.GetComponent<ClueObject>();
+
+                    if (clue != null)
+                    {
+                        Debug.Log("¡Pista encontrada! ID: " + clue.clueID);
+                    }
+                    else
+                    {
+                        Debug.Log("Parece que aqui no hay nada, sigue buscando.");
+                    }
+                }
+            }
         }
+
         else if (playerNearby)
         {
             if (Input.GetKeyDown(KeyCode.E))
