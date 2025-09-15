@@ -25,6 +25,10 @@ public class VehicleInteraction : MonoBehaviour
     private GameObject player;
     private PlayerMovement playerMovement;
 
+    [Header("UI de Mensajes")]
+    public GameObject messagePanel;
+    public TMP_Text messageText;    
+
     // Referencaia para controlar el UI de encendido forzado
     [SerializeField] private HotwirePromptUI hotwirePromptUI;
 
@@ -73,33 +77,39 @@ public class VehicleInteraction : MonoBehaviour
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(
                     inspectionRawImage.rectTransform,
                     Input.mousePosition,
-                    null, // Este campo es para la cámara si usas un Canvas que no está en Screen Space - Overlay
+                    null,
                     out localPoint
                 );
 
-                // Normaliza el punto a un valor de 0 a 1
                 Vector2 normalizedPoint = new Vector2(
                     (localPoint.x + inspectionRawImage.rectTransform.rect.width / 2) / inspectionRawImage.rectTransform.rect.width,
                     (localPoint.y + inspectionRawImage.rectTransform.rect.height / 2) / inspectionRawImage.rectTransform.rect.height
                 );
 
-                // Crea el rayo desde la cámara de inspección usando las coordenadas remapeadas
                 Ray ray = cameraManager.inspectionCamera.ViewportPointToRay(normalizedPoint);
                 RaycastHit hit;
 
                 if (Physics.Raycast(ray, out hit))
                 {
-                    // Resto de la lógica (ClueObject, etc.)
-                    Debug.Log("El rayo chocó con: " + hit.collider.name);
                     ClueObject clue = hit.collider.GetComponent<ClueObject>();
 
                     if (clue != null)
                     {
-                        Debug.Log("¡Pista encontrada! ID: " + clue.clueID);
+                        // Muestra el mensaje de pista encontrada en la UI
+                        messageText.text = "¡Pista encontrada! ID: " + clue.clueID;
+                        messagePanel.SetActive(true);
+
+                        // Oculta el mensaje después de 3 segundos
+                        Invoke("HideMessage", 3f);
                     }
                     else
                     {
-                        Debug.Log("Parece que aqui no hay nada, sigue buscando.");
+                        // Muestra el mensaje de "no hay nada" en la UI
+                        messageText.text = "Parece que aqui no hay nada, sigue buscando.";
+                        messagePanel.SetActive(true);
+
+                        // Oculta el mensaje después de 3 segundos
+                        Invoke("HideMessage", 3f);
                     }
                 }
             }
@@ -116,6 +126,11 @@ public class VehicleInteraction : MonoBehaviour
                 EnterInspectionMode();
             }
         }
+    }
+
+    public void HideMessage()
+    {
+        messagePanel.SetActive(false);
     }
 
     void OnTriggerEnter(Collider other)

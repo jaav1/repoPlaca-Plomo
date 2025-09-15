@@ -306,10 +306,33 @@ public class TenkokuModuleEditor : Editor {
 
 
 			EditorGUI.LabelField(new Rect(rt.x+margin+10, rt.y+75, 180, 18),"Scene Light Layers");
-			if (script.gameObject.activeInHierarchy){
-				script.lightLayer = EditorGUI.MaskField(new Rect(rt.x+margin+165, rt.y+75, 150, 18),"", script.lightLayer, script.tenLayerMasks.ToArray());
-			}
-			ToolTip(rt.x+margin+120, rt.y+75,"Sets which game layers accept Tenkoku Day and Night lighting.");
+            if (script.gameObject.activeInHierarchy)
+            {
+                var options = script.tenLayerMasks != null ? script.tenLayerMasks.ToArray() : null;
+
+                if (options != null && options.Length > 0)
+                {
+                    // Asegura que la máscara no use índices fuera del rango
+                    script.lightLayer &= (1 << options.Length) - 1;
+
+                    script.lightLayer = EditorGUI.MaskField(
+                        new Rect(rt.x + margin + 165, rt.y + 75, 150, 18),
+                        "",
+                        script.lightLayer,
+                        options
+                    );
+                }
+                else
+                {
+                    // Mostrar un texto para que no truene el inspector
+                    EditorGUI.LabelField(
+                        new Rect(rt.x + margin + 165, rt.y + 75, 150, 18),
+                        "No hay opciones"
+                    );
+                }
+            }
+
+            ToolTip(rt.x+margin+120, rt.y+75,"Sets which game layers accept Tenkoku Day and Night lighting.");
 
 
 			EditorGUI.LabelField(new Rect(rt.x+margin+10, rt.y+95, 180, 18),"Ambient Source");
