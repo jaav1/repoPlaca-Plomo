@@ -16,6 +16,9 @@ public class TrunkLock : MonoBehaviour
     // La referencia al ID de la llave que necesitas
     public string keyID = "Llave de coche";
 
+    public CameraManager cameraManager;
+    public GameObject inspectionPanel;
+
     [Header("Referencias de UI")]
     public GameObject messagePanel;
     public TMP_Text messageText;
@@ -53,6 +56,15 @@ public class TrunkLock : MonoBehaviour
             {
                 openTrunkObject.SetActive(true);
             }
+
+            if (cameraManager != null)
+            {
+                cameraManager.SwitchToTrunkInspectionCamera();
+            }
+            if (inspectionPanel != null)
+            {
+                inspectionPanel.SetActive(true);
+            }
         }
         else
         {
@@ -67,5 +79,37 @@ public class TrunkLock : MonoBehaviour
     private void HideMessage()
     {
         messagePanel.SetActive(false);
+    }
+
+    public void ExitTrunkInspection()
+    {
+        // Ocultamos la UI de inspección
+        if (inspectionPanel != null)
+        {
+            inspectionPanel.SetActive(false);
+        }
+
+        // Devolvemos el control a la cámara principal
+        if (cameraManager != null)
+        {
+            cameraManager.SwitchToPlayerCamera();
+        }
+    }
+
+    // Método para ocultar el maletero abierto y mostrar el cerrado.
+    public void CloseTrunk()
+    {
+        // Asegúrate de que el modelo abierto esté desactivado
+        if (openTrunkObject != null)
+        {
+            openTrunkObject.SetActive(false);
+        }
+
+        // Asegúrate de que el modelo cerrado esté activado
+        if (closedTrunkObject != null)
+        {
+            closedTrunkObject.SetActive(true);
+        }
+        Debug.Log("Maletero cerrado.");
     }
 }

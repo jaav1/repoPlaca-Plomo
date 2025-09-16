@@ -157,6 +157,10 @@ public class MissionManager : MonoBehaviour
     {
         if (current == null) return;
 
+        // === LÍNEAS DE DEPURACIÓN ===
+        Debug.Log($"[MissionManager] Recibido evento: Tipo '{type}', Objetivo '{targetId}'.");
+        Debug.Log($"[MissionManager] Paso de misión actual: {current.StepId}. Requisitos: {current.Requirements.Count}");
+        
         // Marca requerimiento cumplido
         bool anyMatched = false;
         foreach (var req in current.Requirements)

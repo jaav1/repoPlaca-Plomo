@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.Events; // ¡Agrega este using!
+using UnityEngine.Events; 
 
 public class ClueObject : MonoBehaviour
 {

@@ -137,13 +137,37 @@ public class PhotoManager : MonoBehaviour
             audioSource.PlayOneShot(cameraShutterSound);
         }
 
+        // --- NUEVA LÓGICA DE DETECCIÓN DE OBJETIVOS ---
+        string detectedTargetId = "";
+        RaycastHit hit;
+        Ray ray = photoCamera.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
+
+        if (Physics.Raycast(ray, out hit, 100f)) // El "100f" es la distancia máxima del rayo
+        {
+            // Comprueba si el objeto impactado tiene el componente MissionTarget
+            MissionTarget missionTarget = hit.transform.GetComponent<MissionTarget>();
+            if (missionTarget != null)
+            {
+                detectedTargetId = missionTarget.targetId;
+                // Reporta el evento de foto al gestor de misiones
+                MissionManager.I?.ReportEvent(TriggerType.TakePhoto, detectedTargetId);
+                Debug.Log("Foto tomada de objetivo: " + detectedTargetId);
+            }
+        }
+        else
+        {
+            Debug.Log("Foto tomada, pero ningún objetivo de misión fue detectado.");
+        }
+
+        // --- FIN DE LA NUEVA LÓGICA ---
+
         // Espera un frame para que la UI se oculte antes de tomar la captura
         yield return new WaitForEndOfFrame();
 
         Texture2D screenshot = ScreenCapture.CaptureScreenshotAsTexture();
         Sprite photoSprite = Sprite.Create(screenshot, new Rect(0, 0, screenshot.width, screenshot.height), new Vector2(0.5f, 0.5f));
 
-        // Muestra el panel de previsualización con la foto
+        // El resto de tu código para mostrar la previsualización es igual
         if (photoPreviewPanel != null && photoPreviewImage != null)
         {
             photoPreviewImage.sprite = photoSprite;

@@ -1,43 +1,63 @@
 using UnityEngine;
-using TMPro; // Asegúrate de tener esta librería
-using UnityEngine.UI; // Y esta tambien
+using TMPro;
+using UnityEngine.UI;
 
 public class TrunkInteraction : MonoBehaviour
 {
-    // Referencias a los scripts que gestionan el carro y el inventario
     public TrunkLock trunkLock;
     public PlayerMovement playerMovement;
+    public RadialInventoryManager inventoryManager;
 
-    // Referencias a tu UI
+    [Header("UI References")]
     public GameObject interactionPanel;
     public TMP_Text interactionText;
 
-    // El ID de la llave que necesitas
-    public string requiredKeyId = "Llave de coche";
-
     private bool canInteract = false;
+    private bool isTrunkInspecting = false;
 
-    // --- MÉTODOS DE LÓGICA ---
     void Update()
     {
-        // Si el jugador está en el área de interacción y presiona E
         if (canInteract && Input.GetKeyDown(KeyCode.R))
         {
-            // Oculta el panel de interacción
-            interactionPanel.SetActive(false);
-
-            // Llama a la lógica para desbloquear el maletero
-            if (trunkLock != null)
+            if (!isTrunkInspecting)
             {
-                trunkLock.UnlockTrunk();
+                if (inventoryManager != null && inventoryManager.HasItem(trunkLock.keyID))
+                {
+                    HideInteractionUI();
+                    trunkLock.UnlockTrunk();
+                    isTrunkInspecting = true;
+                    canInteract = false;
+
+                    // --- ¡CORRECCIÓN! ---
+                    if (playerMovement != null)
+                    {
+                        playerMovement.enabled = false;
+                    }
+                }
+                else
+                {
+                    ShowInteractionUI("Necesitas la llave del coche para abrir el maletero.");
+                }
+            }
+        }
+        else if (isTrunkInspecting && Input.GetKeyDown(KeyCode.R))
+        {
+            trunkLock.ExitTrunkInspection();
+            isTrunkInspecting = false;
+            canInteract = true;
+            ShowInteractionUI("Presiona R para abrir el maletero");
+
+            // --- ¡CORRECCIÓN! ---
+            if (playerMovement != null)
+            {
+                playerMovement.enabled = true;
             }
         }
     }
 
-    // --- MÉTODOS DE DETECCIÓN DE JUGADOR (TRIGGER) ---
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") && !isTrunkInspecting)
         {
             canInteract = true;
             ShowInteractionUI("Presiona R para abrir el maletero\nPresiona E para conducir\nPresiona F para inspeccionar");
@@ -53,7 +73,6 @@ public class TrunkInteraction : MonoBehaviour
         }
     }
 
-    // --- MÉTODOS DE GESTIÓN DE UI ---
     public void ShowInteractionUI(string message)
     {
         if (interactionText != null)

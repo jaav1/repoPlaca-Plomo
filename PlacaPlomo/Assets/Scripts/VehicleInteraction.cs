@@ -1,20 +1,23 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 
 public class VehicleInteraction : MonoBehaviour
 {
     // === REFERENCIAS EN EL INSPECTOR ===
     [Header("Referencias de Cámaras y Puntos")]
     public Transform entryPoint;
-    public Transform interiorCameraPoint; // Punto central para la cámara de inspección
+    public Transform interiorCameraPoint;
 
     [Header("Referencias de UI")]
     public TMP_Text interactionText;
-    public GameObject interactionPanel; // Panel para el texto y las opciones (Presiona E/F)
-    public GameObject inspectionPanel; // El panel con la RawImage de la cámara de inspección
-    public Canvas inspectionCanvas; // Referencia al Canvas de inspección**
+    public GameObject interactionPanel;
+    public GameObject inspectionPanel;
+    public Canvas inspectionCanvas;
     public RawImage inspectionRawImage;
+
+    public GameObject trunkInspectionPanel;
 
     public GameObject cablePuzzlePanel;
     public GameObject fusePuzzlePanel;
@@ -25,13 +28,14 @@ public class VehicleInteraction : MonoBehaviour
     private GameObject player;
     private PlayerMovement playerMovement;
 
+    public TrunkLock trunkLock;
+
     public RadialInventoryManager inventoryManager;
 
     [Header("UI de Mensajes")]
     public GameObject messagePanel;
-    public TMP_Text messageText;    
+    public TMP_Text messageText;
 
-    // Referencaia para controlar el UI de encendido forzado
     [SerializeField] private HotwirePromptUI hotwirePromptUI;
 
     public CameraManager cameraManager;
@@ -40,6 +44,7 @@ public class VehicleInteraction : MonoBehaviour
     private bool playerNearby = false;
     private bool isPlayerInside = false;
     private bool isInspecting = false;
+    private bool isTrunkInspecting = false; // ¡Estado nuevo!
 
     void Awake()
     {
@@ -59,81 +64,41 @@ public class VehicleInteraction : MonoBehaviour
 
     void Update()
     {
-        if (isPlayerInside)
+        // Lógica para salir de la inspección del maletero
+        if (isTrunkInspecting)
+        {
+            // Usa el nuevo método de salida unificado
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                ExitInspection();
+            }
+            if (Input.GetMouseButtonDown(0))
+            {
+                HandleMouseClick();
+            }
+        }
+        // Lógica para salir del vehículo
+        else if (isPlayerInside)
         {
             if (Input.GetKeyDown(KeyCode.Q))
             {
                 ExitVehicle();
             }
         }
+        // Lógica para salir de la inspección interior
         else if (isInspecting)
         {
+            // Usa el nuevo método de salida unificado
             if (Input.GetKeyDown(KeyCode.F))
             {
-                ExitInspectionMode();
+                ExitInspection();
             }
-
             if (Input.GetMouseButtonDown(0))
             {
-                Vector2 localPoint;
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    inspectionRawImage.rectTransform,
-                    Input.mousePosition,
-                    null,
-                    out localPoint
-                );
-
-                Vector2 normalizedPoint = new Vector2(
-                    (localPoint.x + inspectionRawImage.rectTransform.rect.width / 2) / inspectionRawImage.rectTransform.rect.width,
-                    (localPoint.y + inspectionRawImage.rectTransform.rect.height / 2) / inspectionRawImage.rectTransform.rect.height
-                );
-
-                Ray ray = cameraManager.inspectionCamera.ViewportPointToRay(normalizedPoint);
-                RaycastHit hit;
-
-                if (Physics.Raycast(ray, out hit))
-                {
-                    ClueObject clue = hit.collider.GetComponent<ClueObject>();
-
-                    if (clue != null)
-                    {
-                        // 1. Primero, verificamos si el ClueObject tiene una acción de UnityEvent asignada
-                        if (clue.OnClickAction != null && clue.OnClickAction.GetPersistentEventCount() > 0)
-                        {
-                            // Si la tiene, la ejecutamos y salimos del método
-                            clue.OnClickAction.Invoke();
-
-                            // Muestra un mensaje de UI, por ejemplo:
-                            messageText.text = "Haz interactuado con un objeto especial. Si tenías la llave, el maletero se abrirá.";
-                            messagePanel.SetActive(true);
-                            Invoke("HideMessage", 3f);
-                        }
-                        // 2. Si no tiene un UnityEvent, asumimos que es un ítem para recoger
-                        else if (!string.IsNullOrEmpty(clue.clueID))
-                        {
-                            // Llama a tu función de inventario
-                            inventoryManager.AddItem(clue.clueID, "General");
-
-                            // Destruye el objeto para que no se pueda volver a recoger
-                            Destroy(hit.collider.gameObject);
-
-                            // Muestra el mensaje de confirmación en la UI
-                            messageText.text = "Has encontrado " + clue.clueID + " y lo has agregado a tu inventario.";
-                            messagePanel.SetActive(true);
-                            Invoke("HideMessage", 3f);
-                        }
-                        else
-                        {
-                            // Si no tiene ni evento ni ID, muestra un mensaje genérico
-                            messageText.text = "Parece que aqui no hay nada, sigue buscando.";
-                            messagePanel.SetActive(true);
-                            Invoke("HideMessage", 3f);
-                        }
-                    }
-                }
+                HandleMouseClick();
             }
         }
-
+        // Lógica para entrar a cualquier modo si el jugador está cerca
         else if (playerNearby)
         {
             if (Input.GetKeyDown(KeyCode.E))
@@ -144,14 +109,93 @@ public class VehicleInteraction : MonoBehaviour
             {
                 EnterInspectionMode();
             }
+            // Lógica para entrar a la inspección del maletero con la tecla R
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                if (inventoryManager != null && trunkLock != null && inventoryManager.HasItem(trunkLock.keyID))
+                {
+                    // Solo desbloquea el maletero visualmente
+                    trunkLock.UnlockTrunk();
+
+                    // Activa el modo de inspección en este script
+                    EnterTrunkInspectionMode();
+                }
+                else
+                {
+                    // Si no tiene la llave, muestra un mensaje
+                    ShowMessage("Necesitas la llave del coche para abrir el maletero.");
+                }
+            }
         }
     }
 
-    public void HideMessage()
+    // --- Lógica del Raycast para los clics ---
+    private void HandleMouseClick()
     {
-        messagePanel.SetActive(false);
+        Camera activeInspectionCamera = null;
+        if (cameraManager.inspectionCamera.gameObject.activeSelf)
+        {
+            activeInspectionCamera = cameraManager.inspectionCamera;
+        }
+        else if (cameraManager.trunkInspectionCamera.gameObject.activeSelf)
+        {
+            activeInspectionCamera = cameraManager.trunkInspectionCamera;
+        }
+
+        if (activeInspectionCamera != null)
+        {
+            Vector2 localPoint;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                inspectionRawImage.rectTransform,
+                Input.mousePosition,
+                null,
+                out localPoint
+            );
+
+            Vector2 normalizedPoint = new Vector2(
+                (localPoint.x + inspectionRawImage.rectTransform.rect.width / 2) / inspectionRawImage.rectTransform.rect.width,
+                (localPoint.y + inspectionRawImage.rectTransform.rect.height / 2) / inspectionRawImage.rectTransform.rect.height
+            );
+
+            Ray ray = activeInspectionCamera.ViewportPointToRay(normalizedPoint);
+            RaycastHit hit;
+
+            if (Physics.Raycast(ray, out hit))
+            {
+                ClueObject clue = hit.collider.GetComponent<ClueObject>();
+
+                if (clue != null)
+                {
+                    if (clue.OnClickAction != null && clue.OnClickAction.GetPersistentEventCount() > 0)
+                    {
+                        // Si hay un evento en el Inspector, ejecútalo.
+                        clue.OnClickAction.Invoke();
+
+                        // === AÑADE ESTAS LÍNEAS AQUÍ ===
+                        // Ahora, también añade el ítem al inventario y destruye el objeto.
+                        inventoryManager.AddItem(clue.clueID, "General");
+                        Destroy(hit.collider.gameObject);
+                        ShowMessage("Has encontrado " + clue.clueID + " y lo has agregado a tu inventario.");
+                        // ==============================
+                    }
+                    else if (!string.IsNullOrEmpty(clue.clueID))
+                    {
+                        // Este bloque ya no es necesario si siempre configuras la llave.
+                        // Pero puedes dejarlo como "fallback" si quieres.
+                        inventoryManager.AddItem(clue.clueID, "General");
+                        Destroy(hit.collider.gameObject);
+                        ShowMessage("Has encontrado " + clue.clueID + " y lo has agregado a tu inventario.");
+                    }
+                    else
+                    {
+                        ShowMessage("Parece que aqui no hay nada, sigue buscando.");
+                    }
+                }
+            }
+        }
     }
 
+    // --- Métodos de Interacción y Salida ---
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
@@ -178,7 +222,8 @@ public class VehicleInteraction : MonoBehaviour
         if (show)
         {
             interactionPanel.SetActive(true);
-            interactionText.text = "Presiona E para conducir\nPresiona F para inspeccionar";
+            
+            interactionText.text = "Presiona E para conducir\nPresiona F para inspeccionar\nPresiona R para abrir el maletero";
         }
         else
         {
@@ -191,21 +236,20 @@ public class VehicleInteraction : MonoBehaviour
         isPlayerInside = true;
 
         if (playerMovement != null) playerMovement.enabled = false;
-
         if (player != null) player.GetComponent<Renderer>().enabled = false;
 
-        // Llamamos al Administrador de Cámaras para hacer el cambio
         if (cameraManager != null) cameraManager.SwitchToCarCamera();
 
         ShowInteractionPrompt(false);
         carIgnition.TryIgnite();
-
         carIgnition.ShowPlayerSprite(true);
     }
 
     public void ExitVehicle()
     {
         isPlayerInside = false;
+        isTrunkInspecting = false; // Resetea el estado del maletero
+        isInspecting = false;      // Resetea el estado del interior
 
         if (player != null)
         {
@@ -214,19 +258,15 @@ public class VehicleInteraction : MonoBehaviour
             if (player != null) player.GetComponent<Renderer>().enabled = true;
         }
 
-        // Llamamos al Administrador de Cámaras para volver a la cámara del jugador
         if (cameraManager != null) cameraManager.SwitchToPlayerCamera();
 
         interactionPanel.SetActive(false);
         if (hotwirePromptUI != null) hotwirePromptUI.Hide();
         if (cablePuzzlePanel != null) cablePuzzlePanel.SetActive(false);
         if (fusePuzzlePanel != null) fusePuzzlePanel.SetActive(false);
-
         carIgnition.TurnOff();
-
         carIgnition.ShowPlayerSprite(false);
 
-        // Congela el cursor y lo hace invisible
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
@@ -234,6 +274,7 @@ public class VehicleInteraction : MonoBehaviour
     private void EnterInspectionMode()
     {
         isInspecting = true;
+        isTrunkInspecting = false;
 
         if (playerMovement != null) playerMovement.enabled = false;
         if (player != null) player.GetComponent<Renderer>().enabled = false;
@@ -242,12 +283,16 @@ public class VehicleInteraction : MonoBehaviour
         if (inspectionCanvas != null)
             inspectionCanvas.gameObject.SetActive(true);
 
+        // ACTIVA el panel del interior y DESACTIVA el del maletero
         inspectionPanel.SetActive(true);
+        if (trunkInspectionPanel != null) trunkInspectionPanel.SetActive(false);
 
-        // Llamamos al Administrador de Cámaras para hacer el cambio
+        // Asegúrate de que los otros paneles de puzzle estén desactivados
+        if (cablePuzzlePanel != null) cablePuzzlePanel.SetActive(false);
+        if (fusePuzzlePanel != null) fusePuzzlePanel.SetActive(false);
+
         if (cameraManager != null) cameraManager.SwitchToInspectionCamera();
 
-        // Resto de la lógica de inspección
         if (cameraManager != null)
         {
             cameraManager.inspectionCamera.transform.position = interiorCameraPoint.position;
@@ -258,21 +303,84 @@ public class VehicleInteraction : MonoBehaviour
         Cursor.visible = true;
     }
 
-    public void ExitInspectionMode()
+    // --- ¡Nuevos métodos para la inspección del maletero! ---
+    public void EnterTrunkInspectionMode()
     {
+        isTrunkInspecting = true;
         isInspecting = false;
-        if (inspectionCanvas != null)
-            inspectionCanvas.gameObject.SetActive(false);
 
+        if (playerMovement != null) playerMovement.enabled = false;
+        if (player != null) player.GetComponent<Renderer>().enabled = false;
+
+        ShowInteractionPrompt(false);
+        if (inspectionCanvas != null)
+            inspectionCanvas.gameObject.SetActive(true);
+
+        // ACTIVA el panel del maletero y DESACTIVA el del interior
+        if (trunkInspectionPanel != null) trunkInspectionPanel.SetActive(true);
+        inspectionPanel.SetActive(false);
+
+        // Asegúrate de que los otros paneles de puzzle estén desactivados
+        if (cablePuzzlePanel != null) cablePuzzlePanel.SetActive(false);
+        if (fusePuzzlePanel != null) fusePuzzlePanel.SetActive(false);
+
+        if (cameraManager != null) cameraManager.SwitchToTrunkInspectionCamera();
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    public void ExitInspection()
+    {
+        // Resetea todos los estados de inspección
+        isInspecting = false;
+        isTrunkInspecting = false;
+
+        // Cierra el maletero si se está saliendo de su inspección
+        if (trunkLock != null)
+        {
+            trunkLock.CloseTrunk();
+        }
+
+        // Asegúrate de que TODOS los paneles de inspección estén desactivados
+        inspectionPanel.SetActive(false);
+        if (trunkInspectionPanel != null) trunkInspectionPanel.SetActive(false);
+        if (inspectionCanvas != null) inspectionCanvas.gameObject.SetActive(false);
+
+        // Y los paneles de puzzle
+        if (cablePuzzlePanel != null) cablePuzzlePanel.SetActive(false);
+        if (fusePuzzlePanel != null) fusePuzzlePanel.SetActive(false);
+
+        // Restaura el control del jugador y la cámara
         if (playerMovement != null) playerMovement.enabled = true;
         if (player != null) player.GetComponent<Renderer>().enabled = true;
-
-        // Llamamos al Administrador de Cámaras para volver a la cámara del jugador
         if (cameraManager != null) cameraManager.SwitchToPlayerCamera();
 
         ShowInteractionPrompt(true);
-
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+
+    // --- Métodos de UI reutilizables ---
+    public void ShowMessage(string message)
+    {
+        if (messageText != null)
+        {
+            messageText.text = message;
+        }
+        if (messagePanel != null)
+        {
+            messagePanel.SetActive(true);
+        }
+        Invoke("HideMessage", 3f);
+    }
+
+    private void HideMessage()
+    {
+        if (messagePanel != null)
+        {
+            messagePanel.SetActive(false);
+        }
     }
 }
