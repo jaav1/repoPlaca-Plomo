@@ -25,6 +25,8 @@ public class VehicleInteraction : MonoBehaviour
     private GameObject player;
     private PlayerMovement playerMovement;
 
+    public RadialInventoryManager inventoryManager;
+
     [Header("UI de Mensajes")]
     public GameObject messagePanel;
     public TMP_Text messageText;    
@@ -95,21 +97,38 @@ public class VehicleInteraction : MonoBehaviour
 
                     if (clue != null)
                     {
-                        // Muestra el mensaje de pista encontrada en la UI
-                        messageText.text = "¡Pista encontrada! ID: " + clue.clueID;
-                        messagePanel.SetActive(true);
+                        // 1. Primero, verificamos si el ClueObject tiene una acción de UnityEvent asignada
+                        if (clue.OnClickAction != null && clue.OnClickAction.GetPersistentEventCount() > 0)
+                        {
+                            // Si la tiene, la ejecutamos y salimos del método
+                            clue.OnClickAction.Invoke();
 
-                        // Oculta el mensaje después de 3 segundos
-                        Invoke("HideMessage", 3f);
-                    }
-                    else
-                    {
-                        // Muestra el mensaje de "no hay nada" en la UI
-                        messageText.text = "Parece que aqui no hay nada, sigue buscando.";
-                        messagePanel.SetActive(true);
+                            // Muestra un mensaje de UI, por ejemplo:
+                            messageText.text = "Haz interactuado con un objeto especial. Si tenías la llave, el maletero se abrirá.";
+                            messagePanel.SetActive(true);
+                            Invoke("HideMessage", 3f);
+                        }
+                        // 2. Si no tiene un UnityEvent, asumimos que es un ítem para recoger
+                        else if (!string.IsNullOrEmpty(clue.clueID))
+                        {
+                            // Llama a tu función de inventario
+                            inventoryManager.AddItem(clue.clueID, "General");
 
-                        // Oculta el mensaje después de 3 segundos
-                        Invoke("HideMessage", 3f);
+                            // Destruye el objeto para que no se pueda volver a recoger
+                            Destroy(hit.collider.gameObject);
+
+                            // Muestra el mensaje de confirmación en la UI
+                            messageText.text = "Has encontrado " + clue.clueID + " y lo has agregado a tu inventario.";
+                            messagePanel.SetActive(true);
+                            Invoke("HideMessage", 3f);
+                        }
+                        else
+                        {
+                            // Si no tiene ni evento ni ID, muestra un mensaje genérico
+                            messageText.text = "Parece que aqui no hay nada, sigue buscando.";
+                            messagePanel.SetActive(true);
+                            Invoke("HideMessage", 3f);
+                        }
                     }
                 }
             }
