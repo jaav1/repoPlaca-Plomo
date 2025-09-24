@@ -82,6 +82,12 @@ public class MissionManager : MonoBehaviour
             var requiredItems = MissionParsers.ParseListByComma(Cell(row, "required_items"));
             step.RequiredItems = requiredItems;
 
+            if (step.StepId == "M1-03")
+            {
+                Debug.Log($"[CSV Loader] Paso M1-03 leído. Triggers: {triggers.Count} | Targets: {targets.Count}");
+                Debug.Log($"[CSV Loader] Contenido crudo de 'target_ids': '{Cell(row, "target_ids")}'");
+            }
+
             int count = Mathf.Min(triggers.Count, targets.Count);
             for (int i = 0; i < count; i++)
             {
@@ -153,6 +159,7 @@ public class MissionManager : MonoBehaviour
     }
 
     // === API pública para que el juego reporte eventos ===
+    
     public void ReportEvent(TriggerType type, string targetId)
     {
         if (current == null) return;
@@ -160,8 +167,8 @@ public class MissionManager : MonoBehaviour
         // === LÍNEAS DE DEPURACIÓN ===
         Debug.Log($"[MissionManager] Recibido evento: Tipo '{type}', Objetivo '{targetId}'.");
         Debug.Log($"[MissionManager] Paso de misión actual: {current.StepId}. Requisitos: {current.Requirements.Count}");
-        
-        // Marca requerimiento cumplido
+
+        // Marca requerimiento cumplido en la lista
         bool anyMatched = false;
         foreach (var req in current.Requirements)
         {
@@ -170,17 +177,19 @@ public class MissionManager : MonoBehaviour
                 req.Completed = true;
                 _satisfiedForThisStep.Add($"{type}:{targetId}");
                 anyMatched = true;
+                break; // Salimos del bucle una vez que encontramos una coincidencia
             }
         }
 
-        if (!anyMatched) return;
+        if (!anyMatched)
+        {
+            Debug.LogWarning($"[MissionManager] Evento reportado no coincide con ningún requisito del paso actual.");
+            return;
+        }
 
-        // ¿Se cumplieron todos los requisitos de este paso?
-        bool allDone = true;
-        foreach (var req in current.Requirements)
-            if (!req.Completed) { allDone = false; break; }
-
-        if (allDone)
+        // AHORA verificamos si todos los requisitos han sido cumplidos
+        // comparando el número de requisitos satisfechos con el total.
+        if (_satisfiedForThisStep.Count == current.Requirements.Count)
         {
             // Si NO es paso de elección, avanzar directo por NextOnSuccess
             if (!current.IsChoiceStep)

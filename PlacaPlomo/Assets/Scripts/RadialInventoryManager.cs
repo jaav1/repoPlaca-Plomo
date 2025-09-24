@@ -57,10 +57,14 @@ public class RadialInventoryManager : MonoBehaviour
     public Sprite carpetaSprite;
     public Sprite camaraSprite;
     public Sprite fotoSprite;
+    public Sprite noteSprite;
+    public Sprite packageSprite;
     public GameObject llavePrefab;
     public GameObject carkeyPrefab;
     public GameObject carpetaPrefab;
     public GameObject camaraPrefab;
+    public GameObject notePrefab;
+    public GameObject packagePrefab;
 
     // =================================================================================
     // VARIABLES INTERNAS Y PRIVADAS
@@ -394,16 +398,22 @@ public class RadialInventoryManager : MonoBehaviour
         itemIcons.Add("Llave de coche", carkeySprite);
         itemIcons.Add("Carpeta", carpetaSprite);
         itemIcons.Add("Camara Fotografica", camaraSprite);
+        itemIcons.Add("ITEM_NotaNombres", noteSprite);
+        itemIcons.Add("ITEM_Paquete", packageSprite);
 
         itemDescriptions.Add("Llave", "Una llave de bronce. Parece encajar en una cerradura antigua.");
         itemDescriptions.Add("Llave de coche", "Sin esta llave no podras conducir.");
         itemDescriptions.Add("Carpeta", "Al parecer hay mucha información importante aquí.");
         itemDescriptions.Add("Camara Fotografica", "Una vieja cámara que puede capturar imágenes.");
+        itemDescriptions.Add("ITEM_NotaNombres", "Vaya, en esta nota me puedo encontrar algunos nombres importantes");
+        itemDescriptions.Add("ITEM_Paquete", "Esto no se ve normal, creo que tiene algo curioso dentro");
 
         worldItemPrefabs.Add("Llave", llavePrefab);
         worldItemPrefabs.Add("Llave de coche", carkeyPrefab);
         worldItemPrefabs.Add("Carpeta", carpetaPrefab);
         worldItemPrefabs.Add("Camara Fotografica", camaraPrefab);
+        worldItemPrefabs.Add("ITEM_NotaNombres", notePrefab);
+        worldItemPrefabs.Add("ITEM_Paquete", packagePrefab);
 
         if (!audioSource)
         {

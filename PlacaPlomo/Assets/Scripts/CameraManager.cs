@@ -73,7 +73,7 @@ public class CameraManager : MonoBehaviour
         playerCamera.GetComponent<AudioListener>().enabled = false;
         carCamera.GetComponent<AudioListener>().enabled = false;
         inspectionCamera.GetComponent<AudioListener>().enabled = false;
-        bgInspectionCamera.GetComponent<AudioListener>().enabled = true;
-        trunkInspectionCamera.GetComponent<AudioListener>().enabled = false;
+        bgInspectionCamera.GetComponent<AudioListener>().enabled = false;
+        trunkInspectionCamera.GetComponent<AudioListener>().enabled = true;
     }
 }

@@ -1,6 +1,5 @@
 using UnityEngine;
 using TMPro;
-using System.Collections;
 
 public class TrunkLock : MonoBehaviour
 {
@@ -10,102 +9,49 @@ public class TrunkLock : MonoBehaviour
     // El objeto del coche con el maletero abierto y la pista adentro
     public GameObject openTrunkObject;
 
-    // La referencia a tu sistema de inventario
-    public RadialInventoryManager inventoryManager;
-
     // La referencia al ID de la llave que necesitas
+    // (Aún la mantenemos aquí por si otro script la necesita, pero no la usaremos en este)
     public string keyID = "Llave de coche";
 
-    public CameraManager cameraManager;
-    public GameObject inspectionPanel;
-
-    [Header("Referencias de UI")]
+    // Mantenemos la referencia a los objetos, pero el control lo tendrá VehicleInteraction
     public GameObject messagePanel;
     public TMP_Text messageText;
 
     void Start()
     {
-        // El maletero abierto debe estar desactivado al iniciar el juego
         if (openTrunkObject != null)
         {
             openTrunkObject.SetActive(false);
         }
-
         if (messagePanel != null)
         {
             messagePanel.SetActive(false);
         }
     }
 
+    // El método UnlockTrunk() ahora es simple y solo cambia los modelos 3D
     public void UnlockTrunk()
     {
-        // Verifica si el jugador tiene la llave en su inventario
-        // Ahora usamos la variable keyID
-        if (inventoryManager != null && inventoryManager.HasItem(keyID))
+        Debug.Log("Maletero desbloqueado.");
+
+        if (closedTrunkObject != null)
         {
-            Debug.Log("Maletero desbloqueado.");
-
-            // Desactiva el modelo de maletero cerrado
-            if (closedTrunkObject != null)
-            {
-                closedTrunkObject.SetActive(false);
-            }
-
-            // Activa el modelo de maletero abierto
-            if (openTrunkObject != null)
-            {
-                openTrunkObject.SetActive(true);
-            }
-
-            if (cameraManager != null)
-            {
-                cameraManager.SwitchToTrunkInspectionCamera();
-            }
-            if (inspectionPanel != null)
-            {
-                inspectionPanel.SetActive(true);
-            }
+            closedTrunkObject.SetActive(false);
         }
-        else
+
+        if (openTrunkObject != null)
         {
-            // Muestra el mensaje en la pantalla
-            messageText.text = "Necesitas la llave del coche para abrir el maletero.";
-            messagePanel.SetActive(true);
-            Invoke("HideMessage", 3f);
+            openTrunkObject.SetActive(true);
         }
     }
 
-    // Método para ocultar el mensaje
-    private void HideMessage()
-    {
-        messagePanel.SetActive(false);
-    }
-
-    public void ExitTrunkInspection()
-    {
-        // Ocultamos la UI de inspección
-        if (inspectionPanel != null)
-        {
-            inspectionPanel.SetActive(false);
-        }
-
-        // Devolvemos el control a la cámara principal
-        if (cameraManager != null)
-        {
-            cameraManager.SwitchToPlayerCamera();
-        }
-    }
-
-    // Método para ocultar el maletero abierto y mostrar el cerrado.
+    // Este método está perfecto. Lo usamos para cerrar el maletero visualmente.
     public void CloseTrunk()
     {
-        // Asegúrate de que el modelo abierto esté desactivado
         if (openTrunkObject != null)
         {
             openTrunkObject.SetActive(false);
         }
-
-        // Asegúrate de que el modelo cerrado esté activado
         if (closedTrunkObject != null)
         {
             closedTrunkObject.SetActive(true);

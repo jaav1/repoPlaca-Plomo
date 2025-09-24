@@ -16,6 +16,7 @@ public class VehicleInteraction : MonoBehaviour
     public GameObject inspectionPanel;
     public Canvas inspectionCanvas;
     public RawImage inspectionRawImage;
+    public RawImage trunkInspectionRawImage;
 
     public GameObject trunkInspectionPanel;
 
@@ -64,132 +65,166 @@ public class VehicleInteraction : MonoBehaviour
 
     void Update()
     {
-        // Lógica para salir de la inspección del maletero
-        if (isTrunkInspecting)
+        // === LÓGICA DE MANEJO DE ENTRADAS DEL JUGADOR ===
+        // Esta sección maneja todas las entradas de teclado y ratón de manera independiente.
+
+        // Manejar los clics del ratón en modo de inspección.
+        if (Input.GetMouseButtonDown(0))
         {
-            // Usa el nuevo método de salida unificado
-            if (Input.GetKeyDown(KeyCode.R))
+            HandleMouseClick();
+        }
+
+        // Manejar la tecla 'F' para inspeccionar y salir de la inspección.
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            // Si ya estás inspeccionando, sal de la inspección.
+            if (isInspecting)
             {
                 ExitInspection();
             }
-            if (Input.GetMouseButtonDown(0))
-            {
-                HandleMouseClick();
-            }
-        }
-        // Lógica para salir del vehículo
-        else if (isPlayerInside)
-        {
-            if (Input.GetKeyDown(KeyCode.Q))
-            {
-                ExitVehicle();
-            }
-        }
-        // Lógica para salir de la inspección interior
-        else if (isInspecting)
-        {
-            // Usa el nuevo método de salida unificado
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                ExitInspection();
-            }
-            if (Input.GetMouseButtonDown(0))
-            {
-                HandleMouseClick();
-            }
-        }
-        // Lógica para entrar a cualquier modo si el jugador está cerca
-        else if (playerNearby)
-        {
-            if (Input.GetKeyDown(KeyCode.E))
-            {
-                EnterVehicle();
-            }
-            if (Input.GetKeyDown(KeyCode.F))
+            // Si no estás inspeccionando y estás cerca del vehículo, entra en modo de inspección interior.
+            else if (playerNearby && !isTrunkInspecting)
             {
                 EnterInspectionMode();
             }
-            // Lógica para entrar a la inspección del maletero con la tecla R
-            if (Input.GetKeyDown(KeyCode.R))
+        }
+
+        // Manejar la tecla 'R' para abrir/cerrar el maletero.
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            // Si estás inspeccionando el maletero, sal de la inspección.
+            if (isTrunkInspecting)
             {
+                ExitInspection();
+            }
+            // Si no estás inspeccionando el maletero y estás cerca, intenta abrirlo.
+            else if (playerNearby)
+            {
+                // Revisa si el jugador tiene la llave.
                 if (inventoryManager != null && trunkLock != null && inventoryManager.HasItem(trunkLock.keyID))
                 {
-                    // Solo desbloquea el maletero visualmente
-                    trunkLock.UnlockTrunk();
-
-                    // Activa el modo de inspección en este script
                     EnterTrunkInspectionMode();
                 }
+                // Si no tiene la llave, muestra un mensaje.
                 else
                 {
-                    // Si no tiene la llave, muestra un mensaje
                     ShowMessage("Necesitas la llave del coche para abrir el maletero.");
                 }
             }
         }
+
+        // Manejar la tecla 'E' para entrar al vehículo.
+        if (Input.GetKeyDown(KeyCode.E) && playerNearby)
+        {
+            EnterVehicle();
+        }
+
+        // Manejar la tecla 'Q' para salir del vehículo.
+        if (Input.GetKeyDown(KeyCode.Q) && isPlayerInside)
+        {
+            ExitVehicle();
+        }
+
+        // === LÓGICA PARA MOSTRAR LA UI DE INTERACCIÓN ===
+        // Muestra la UI solo si el jugador está cerca y no está en ningún modo especial.
+        if (playerNearby && !isInspecting && !isTrunkInspecting && !isPlayerInside)
+        {
+            ShowInteractionPrompt(true);
+        }
+        else
+        {
+            ShowInteractionPrompt(false);
+        }
     }
 
     // --- Lógica del Raycast para los clics ---
-    private void HandleMouseClick()
+    public void HandleMouseClick()
     {
+        Debug.Log("HandleMouseClick() ha sido llamado.");
+
+        // Escudo para evitar clics fuera del modo de inspección.
+        if (!isInspecting && !isTrunkInspecting || !Cursor.visible)
+        {
+            Debug.Log("HandleMouseClick() - Saliendo. Estado de inspección incorrecto o cursor invisible."); // <--- NUEVO LOG 2
+            return;
+        }
+
         Camera activeInspectionCamera = null;
-        if (cameraManager.inspectionCamera.gameObject.activeSelf)
+        RawImage activeRawImage = null;
+
+        // Lógica para el modo de inspección INTERIOR.
+        if (isInspecting)
         {
             activeInspectionCamera = cameraManager.inspectionCamera;
+            activeRawImage = inspectionRawImage;
         }
-        else if (cameraManager.trunkInspectionCamera.gameObject.activeSelf)
+        // Lógica para el modo de inspección del MALETERO.
+        else if (isTrunkInspecting)
         {
             activeInspectionCamera = cameraManager.trunkInspectionCamera;
+            activeRawImage = trunkInspectionRawImage;
         }
 
-        if (activeInspectionCamera != null)
+        // Si no se asignó una cámara o RawImage, no hacemos nada.
+        if (activeInspectionCamera == null || activeRawImage == null)
         {
-            Vector2 localPoint;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                inspectionRawImage.rectTransform,
-                Input.mousePosition,
-                null,
-                out localPoint
-            );
+            Debug.LogWarning("HandleMouseClick() - Saliendo. La cámara o la RawImage no están asignadas. Camera: " + activeInspectionCamera + ", RawImage: " + activeRawImage); // <--- NUEVO LOG 3
+            return;
+        }
+        Debug.Log("HandleMouseClick() - Todos los requisitos pasados. Preparando Raycast..."); // <--- NUEVO LOG 4
 
-            Vector2 normalizedPoint = new Vector2(
-                (localPoint.x + inspectionRawImage.rectTransform.rect.width / 2) / inspectionRawImage.rectTransform.rect.width,
-                (localPoint.y + inspectionRawImage.rectTransform.rect.height / 2) / inspectionRawImage.rectTransform.rect.height
-            );
+        Vector2 localPoint;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            activeRawImage.rectTransform,
+            Input.mousePosition,
+            null,
+            out localPoint
+        );
 
-            Ray ray = activeInspectionCamera.ViewportPointToRay(normalizedPoint);
-            RaycastHit hit;
+        Vector2 normalizedPoint = new Vector2(
+            (localPoint.x + activeRawImage.rectTransform.rect.width / 2) / activeRawImage.rectTransform.rect.width,
+            (localPoint.y + activeRawImage.rectTransform.rect.height / 2) / activeRawImage.rectTransform.rect.height
+        );
 
-            if (Physics.Raycast(ray, out hit))
+        // Crea un layerMask para los objetos que quieres que el Raycast detecte.
+        int layerMask = 1 << LayerMask.NameToLayer("Collectibles");
+
+        Ray ray = activeInspectionCamera.ViewportPointToRay(normalizedPoint);
+        RaycastHit hit;
+
+        Debug.DrawRay(ray.origin, ray.direction * 10f, Color.red, 5f);
+
+        // Usa el layerMask en el Raycast
+        if (Physics.Raycast(ray, out hit, 100f, layerMask))
+        {
+            ClueObject clue = hit.collider.GetComponent<ClueObject>();
+
+            if (clue != null)
             {
-                ClueObject clue = hit.collider.GetComponent<ClueObject>();
-
-                if (clue != null)
+                if (clue.OnClickAction != null && clue.OnClickAction.GetPersistentEventCount() > 0)
                 {
-                    if (clue.OnClickAction != null && clue.OnClickAction.GetPersistentEventCount() > 0)
-                    {
-                        // Si hay un evento en el Inspector, ejecútalo.
-                        clue.OnClickAction.Invoke();
+                    // Si hay un evento en el Inspector, ejecútalo.
+                    clue.OnClickAction.Invoke();
+                    inventoryManager.AddItem(clue.clueID, "General");
+                    MissionManager.I?.ReportEvent(TriggerType.Pickup, clue.clueID);
 
-                        // === AÑADE ESTAS LÍNEAS AQUÍ ===
-                        // Ahora, también añade el ítem al inventario y destruye el objeto.
-                        inventoryManager.AddItem(clue.clueID, "General");
-                        Destroy(hit.collider.gameObject);
-                        ShowMessage("Has encontrado " + clue.clueID + " y lo has agregado a tu inventario.");
-                        // ==============================
-                    }
-                    else if (!string.IsNullOrEmpty(clue.clueID))
-                    {
-                        // Este bloque ya no es necesario si siempre configuras la llave.
-                        // Pero puedes dejarlo como "fallback" si quieres.
-                        inventoryManager.AddItem(clue.clueID, "General");
-                        Destroy(hit.collider.gameObject);
-                        ShowMessage("Has encontrado " + clue.clueID + " y lo has agregado a tu inventario.");
-                    }
-                    else
-                    {
-                        ShowMessage("Parece que aqui no hay nada, sigue buscando.");
-                    }
+                    Destroy(hit.collider.gameObject);
+                    ShowMessage("Has encontrado " + clue.clueID + " y lo has agregado a tu inventario.");
+                }
+                else if (!string.IsNullOrEmpty(clue.clueID))
+                {
+                    // Este bloque es un "fallback".
+                    inventoryManager.AddItem(clue.clueID, "General");
+
+                    // AÑADIDO: Notifica al MissionManager que un objeto ha sido recogido
+                    MissionManager.I?.ReportEvent(TriggerType.Pickup, clue.clueID);
+
+                    Destroy(hit.collider.gameObject);
+                    ShowMessage("Has encontrado " + clue.clueID + " y lo has agregado a tu inventario.");
+                }
+                else
+                {
+                    ShowMessage("Parece que aqui no hay nada, sigue buscando.");
                 }
             }
         }
@@ -247,6 +282,8 @@ public class VehicleInteraction : MonoBehaviour
 
     public void ExitVehicle()
     {
+        Debug.Log("¡ExitVehicle() ha sido llamado!");
+
         isPlayerInside = false;
         isTrunkInspecting = false; // Resetea el estado del maletero
         isInspecting = false;      // Resetea el estado del interior
@@ -303,24 +340,31 @@ public class VehicleInteraction : MonoBehaviour
         Cursor.visible = true;
     }
 
-    // --- ¡Nuevos métodos para la inspección del maletero! ---
+    // --- métodos para la inspección del maletero! ---
     public void EnterTrunkInspectionMode()
     {
+        // Centraliza la llamada a UnlockTrunk aquí
+        if (trunkLock != null)
+        {
+            trunkLock.UnlockTrunk();
+        }
+
+        // Activa el estado de inspección
         isTrunkInspecting = true;
         isInspecting = false;
 
+        // Controla la UI y la cámara
         if (playerMovement != null) playerMovement.enabled = false;
         if (player != null) player.GetComponent<Renderer>().enabled = false;
 
         ShowInteractionPrompt(false);
         if (inspectionCanvas != null)
+        {
             inspectionCanvas.gameObject.SetActive(true);
+            trunkInspectionPanel.SetActive(true);
+        }
 
-        // ACTIVA el panel del maletero y DESACTIVA el del interior
-        if (trunkInspectionPanel != null) trunkInspectionPanel.SetActive(true);
         inspectionPanel.SetActive(false);
-
-        // Asegúrate de que los otros paneles de puzzle estén desactivados
         if (cablePuzzlePanel != null) cablePuzzlePanel.SetActive(false);
         if (fusePuzzlePanel != null) fusePuzzlePanel.SetActive(false);
 
@@ -332,22 +376,21 @@ public class VehicleInteraction : MonoBehaviour
 
     public void ExitInspection()
     {
-        // Resetea todos los estados de inspección
-        isInspecting = false;
-        isTrunkInspecting = false;
-
-        // Cierra el maletero si se está saliendo de su inspección
-        if (trunkLock != null)
+        if (trunkLock != null && isTrunkInspecting)
         {
             trunkLock.CloseTrunk();
         }
+
+        // Resetea todos los estados de inspección
+        isInspecting = false;
+        isTrunkInspecting = false;
 
         // Asegúrate de que TODOS los paneles de inspección estén desactivados
         inspectionPanel.SetActive(false);
         if (trunkInspectionPanel != null) trunkInspectionPanel.SetActive(false);
         if (inspectionCanvas != null) inspectionCanvas.gameObject.SetActive(false);
 
-        // Y los paneles de puzzle
+        // ... y los paneles de puzzle
         if (cablePuzzlePanel != null) cablePuzzlePanel.SetActive(false);
         if (fusePuzzlePanel != null) fusePuzzlePanel.SetActive(false);
 
