@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
   m_Name: Soborno
   m_EditorClassIdentifier: 
+  targetMissionID: NPC_DonTomas
   speakerName: Vendedor
   dialogueText: "\xBFCargamento? No me gusta ese tono, amigo. Aqu\xED no se habla
     de esas cosas abiertamente."

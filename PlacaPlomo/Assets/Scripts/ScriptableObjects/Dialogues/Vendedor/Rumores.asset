@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
   m_Name: Rumores
   m_EditorClassIdentifier: 
+  targetMissionID: NPC_DonTomas
   speakerName: Vendedor
   dialogueText: Dicen que por las noches se oyen ruidos en la bodega vieja. Algunos
     piensan que hay contrabando... otros dicen que algo peor.

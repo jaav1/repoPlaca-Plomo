@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
   m_Name: Respuesta2
   m_EditorClassIdentifier: 
+  targetMissionID: NPC_DonTomas
   speakerName: "Don Tom\xE1s"
   dialogueText: "\xBFY si coopero? \xBFUsted me garantiza que no termino tras las
     rejas?"

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
   m_Name: Mencion
   m_EditorClassIdentifier: 
+  targetMissionID: NPC_DonTomas
   speakerName: Vendedor
   dialogueText: "El Tuerto... hace d\xEDas que no lo veo. Pero escuch\xE9 que alguien
     como \xE9l fue visto en la cantina del Callej\xF3n del Diablo."

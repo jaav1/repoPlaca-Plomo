@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
   m_Name: Respuesta3
   m_EditorClassIdentifier: 
+  targetMissionID: NPC_DonTomas
   speakerName: "Don Tom\xE1s"
   dialogueText: "Est\xE1 bien\u2026 hablar\xE9. Pero prom\xE9tame que proteger\xE1
     a mi familia. Esto va m\xE1s all\xE1 del mercado."

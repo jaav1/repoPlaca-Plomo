@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
   m_Name: Rechazo Final
   m_EditorClassIdentifier: 
+  targetMissionID: NPC_DonTomas
   speakerName: Vendedor
   dialogueText: "Ya basta. No dir\xE9 ni una palabra m\xE1s. Vete antes de que me
     haga olvidar mi paciencia."

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
   m_Name: Amenaza
   m_EditorClassIdentifier: 
+  targetMissionID: NPC_DonTomas
   speakerName: Vendedor
   dialogueText: "Ja, tienes agallas\u2026 o estupidez. Esta gente no reacciona bien
     a las amenazas."

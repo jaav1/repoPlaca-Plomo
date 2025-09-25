@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
   m_Name: Confianza
   m_EditorClassIdentifier: 
+  targetMissionID: NPC_DonTomas
   speakerName: "Don Tom\xE1s"
   dialogueText: "Conf\xEDo en ti completamente. Solo quer\xEDa asegurarme de que
     eres alguien en quien puedo confiar para ayudar con este asunto delicado."

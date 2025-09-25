@@ -144,11 +144,22 @@ public class DialogueManager : MonoBehaviour
         if (selected.nextDialogue != null)
             StartDialogue(selected.nextDialogue);
         else
-            EndDialogue();
+            EndDialogue(currentDialogue.targetMissionID);
     }
 
-    public void EndDialogue()
+    public void EndDialogue(string completedNpcId = null)
     {
+        // ------------------ CONEXIÓN CON EL SISTEMA DE MISIONES ------------------
+        // Reportamos el evento solo si se proporcion un ID de NPC al finalizar
+        if (!string.IsNullOrEmpty(completedNpcId))
+        {
+            // Enva el evento: TriggerType.Dialogue + Target ID (ej: NPC_DonTomas)
+            MissionManager.I?.ReportEvent(TriggerType.Dialogue, completedNpcId);
+            Debug.Log($"[Mission] Dilogo terminado. Reportando evento: {TriggerType.Dialogue} / {completedNpcId}");
+        }
+        // -------------------------------------------------------------------------
+
+
         if (dialoguePanel != null) dialoguePanel.SetActive(false);
 
         isDialogueActive = false;

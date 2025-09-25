@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
   m_Name: Respuesta2
   m_EditorClassIdentifier: 
+  targetMissionID: NPC_DonTomas
   speakerName: "Don Tom\xE1s"
   dialogueText: "Bien\u2026 dar\xE9 un paso para confiar, pero necesitar\xE9 que
     me lo ganes. Cada acci\xF3n tuya ser\xE1 importante."

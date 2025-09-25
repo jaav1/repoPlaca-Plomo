@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
   m_Name: Soborno 1
   m_EditorClassIdentifier: 
+  targetMissionID: NPC_DonTomas
   speakerName: Vendedor
   dialogueText: "Mmm... por unas monedas, la memoria mejora. El cargamento llega
     esta noche por el canal. Pero cuidado\u2026 te est\xE1s metiendo donde no debes."

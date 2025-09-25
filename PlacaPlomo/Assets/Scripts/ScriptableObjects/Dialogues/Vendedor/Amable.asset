@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
   m_Name: Amable
   m_EditorClassIdentifier: 
+  targetMissionID: NPC_DonTomas
   speakerName: Vendedor
   dialogueText: "Mmm\u2026 Est\xE1 bien. Siempre es mejor hablar con respeto. \xBFY
     qu\xE9 necesitas saber?"
