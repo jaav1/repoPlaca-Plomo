@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
+  m_Name: Respuesta3
+  m_EditorClassIdentifier: 
+  targetMissionID: NPC_DonTomas
+  speakerName: "Don Tom\xE1s"
+  dialogueText: "Tal vez una mujer\u2026 pero no quiero soltar el nombre."
+  options:
+  - optionText: "No tiene que temer, yo cuidar\xE9 lo que diga."
+    nextDialogue: {fileID: 11400000, guid: e43c9107a990e1a45902aafafeb9d853, type: 2}
+    confianzaDelta: 2
+    sospechaDelta: 0
+  - optionText: Ya casi lo dice, solo falta terminar la frase.
+    nextDialogue: {fileID: 11400000, guid: e43c9107a990e1a45902aafafeb9d853, type: 2}
+    confianzaDelta: 1
+    sospechaDelta: 1
+  - optionText: "Ya est\xE1 acorralado, diga el nombre."
+    nextDialogue: {fileID: 11400000, guid: e43c9107a990e1a45902aafafeb9d853, type: 2}
+    confianzaDelta: 0
+    sospechaDelta: 2
+  dialogueAudio: {fileID: 8300000, guid: a435641a288d4764891165697d0363cd, type: 3}
