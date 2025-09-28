@@ -19,6 +19,10 @@ public class DialogueManager : MonoBehaviour
     public Sprite iconoMedio;
     public Sprite iconoAlto;
 
+    [Header("Configuración del icono")]
+    [Range(0.1f, 1f)]
+    public float iconScale = 0.5f;
+
     [Header("Configuración de relación")]
     public float maxValor = 100f;
     [Range(0, 100)]
@@ -34,9 +38,13 @@ public class DialogueManager : MonoBehaviour
     private Dialogue currentDialogue;
     private bool isDialogueActive = false;
 
-    // CORRECCIÓN: relación pública accesible
+    // relación pública accesible
     public float relacion;
     private float _targetIconX = 0f;
+
+    // Para audio por línea
+    private NPCInteract currentNPC;
+    private int currentAudioIndex = 0;
 
     void Awake()
     {
@@ -53,10 +61,8 @@ public class DialogueManager : MonoBehaviour
             relacionBarra.minValue = 0f;
             relacionBarra.maxValue = maxValor;
             relacionBarra.value = relacion;
-            Canvas.ForceUpdateCanvases();
         }
 
-        AjustarIconoTamanio();
         CalcularTargetIconX();
 
         if (iconoIndicador != null)
@@ -70,12 +76,17 @@ public class DialogueManager : MonoBehaviour
         ActualizarSpriteSegunValor();
     }
 
+    void Start()
+    {
+        Canvas.ForceUpdateCanvases();
+        AjustarIconoTamanio();
+    }
+
     void Update()
     {
         if (isDialogueActive && Input.GetKeyDown(KeyCode.Escape))
             EndDialogue();
 
-        // Mover icono suavemente
         if (iconoIndicador != null && relacionBarra != null)
         {
             Vector2 pos = iconoIndicador.anchoredPosition;
@@ -93,11 +104,13 @@ public class DialogueManager : MonoBehaviour
     public bool IsDialogueActive() => isDialogueActive;
 
     // ---------------- DIÁLOGO ----------------
-    public void StartDialogue(Dialogue dialogue)
+    public void StartDialogue(Dialogue dialogue, NPCInteract npc, int audioIndex = 0)
     {
         if (dialogue == null || dialoguePanel == null) return;
 
         currentDialogue = dialogue;
+        currentNPC = npc;
+        currentAudioIndex = audioIndex;
         isDialogueActive = true;
 
         if (cameraControlScript != null) cameraControlScript.enabled = false;
@@ -111,6 +124,9 @@ public class DialogueManager : MonoBehaviour
 
         speakerText.text = dialogue.speakerName ?? "Desconocido";
         dialogueText.text = dialogue.dialogueText ?? "";
+
+        // Reproducir audio desde el NPC
+        currentNPC?.PlayDialogueClip(currentAudioIndex);
 
         for (int i = 0; i < optionButtons.Length; i++)
         {
@@ -142,28 +158,26 @@ public class DialogueManager : MonoBehaviour
         AddRelacionDelta(delta);
 
         if (selected.nextDialogue != null)
-            StartDialogue(selected.nextDialogue);
+        {
+            currentAudioIndex++; // siguiente clip del NPC
+            StartDialogue(selected.nextDialogue, currentNPC, currentAudioIndex);
+        }
         else
             EndDialogue(currentDialogue.targetMissionID);
     }
 
     public void EndDialogue(string completedNpcId = null)
     {
-        // ------------------ CONEXIÓN CON EL SISTEMA DE MISIONES ------------------
-        // Reportamos el evento solo si se proporcion un ID de NPC al finalizar
         if (!string.IsNullOrEmpty(completedNpcId))
         {
-            // Enva el evento: TriggerType.Dialogue + Target ID (ej: NPC_DonTomas)
             MissionManager.I?.ReportEvent(TriggerType.Dialogue, completedNpcId);
-            Debug.Log($"[Mission] Dilogo terminado. Reportando evento: {TriggerType.Dialogue} / {completedNpcId}");
         }
-        // -------------------------------------------------------------------------
-
 
         if (dialoguePanel != null) dialoguePanel.SetActive(false);
 
         isDialogueActive = false;
         currentDialogue = null;
+        currentNPC = null;
 
         if (cameraControlScript != null) cameraControlScript.enabled = true;
         if (playerMovementScript != null) playerMovementScript.enabled = true;
@@ -193,7 +207,6 @@ public class DialogueManager : MonoBehaviour
     public void AddRelacionDelta(float delta)
     {
         SetRelacion(relacion + delta);
-        Debug.Log($"Relación actual: {relacion} (delta: {delta})");
     }
 
     void CalcularTargetIconX()
@@ -235,7 +248,7 @@ public class DialogueManager : MonoBehaviour
         if (relacionBarra == null || iconoIndicador == null) return;
 
         float barH = relacionBarra.GetComponent<RectTransform>().rect.height;
-        float h = barH * 1.2f;
+        float h = barH * iconScale;
         iconoIndicador.sizeDelta = new Vector2(h, h);
     }
 

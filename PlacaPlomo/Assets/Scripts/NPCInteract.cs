@@ -13,14 +13,18 @@ public class NPCInteract : MonoBehaviour
     public GameObject mensajeInteraccion;
 
     [Header("Ítem requerido (nombre EXACTO)")]
-    public string nombreItemRequerido = "Carpeta";
+    [SerializeField] private string nombreItemRequerido = "Carpeta";
 
     [Header("Gestos / Animaciones")]
     public Animator animator;
-    public SpriteRenderer portraitRenderer; // Sprite del NPC
+    public SpriteRenderer portraitRenderer;
     public Sprite portraitNeutral;
     public Sprite portraitHappy;
     public Sprite portraitAngry;
+
+    [Header("Audio del NPC")]
+    public AudioSource npcAudioSource;
+    public AudioClip[] dialogueClips; // 0 = línea inicial, 1..n = respuestas
 
     private bool jugadorCerca = false;
 
@@ -52,13 +56,13 @@ public class NPCInteract : MonoBehaviour
     {
         if (portraitRenderer == null || dialogueManager == null) return;
 
-        float relacionActual = dialogueManager.relacion; // usar propiedad pública de DialogueManager
+        float relacionActual = dialogueManager.relacion;
         if (relacionActual <= dialogueManager.bajoThreshold)
-            SetExpression(2); // enojado
+            SetExpression(2);
         else if (relacionActual >= dialogueManager.altoThreshold)
-            SetExpression(1); // feliz
+            SetExpression(1);
         else
-            SetExpression(0); // neutral
+            SetExpression(0);
     }
 
     private void IniciarDialogoSegunRelacion()
@@ -69,26 +73,35 @@ public class NPCInteract : MonoBehaviour
 
         float relacion = dialogueManager.relacion;
 
-        // Determinar diálogo y expresión según la relación
+        Dialogue dialogueToStart = null;
+
         if (relacion <= dialogueManager.bajoThreshold && desconfianzaDialogue != null)
         {
-            SetExpression(2); // enojado
-            dialogueManager.StartDialogue(desconfianzaDialogue);
+            SetExpression(2);
+            dialogueToStart = desconfianzaDialogue;
         }
         else if (relacion >= dialogueManager.altoThreshold && confianzaAltaDialogue != null)
         {
-            SetExpression(1); // feliz
-            dialogueManager.StartDialogue(confianzaAltaDialogue);
+            SetExpression(1);
+            dialogueToStart = confianzaAltaDialogue;
         }
         else if (tieneItem && itemDialogue != null)
         {
-            SetExpression(0); // neutral
-            dialogueManager.StartDialogue(itemDialogue);
+            SetExpression(0);
+            dialogueToStart = itemDialogue;
         }
         else if (defaultDialogue != null)
         {
-            SetExpression(0); // neutral
-            dialogueManager.StartDialogue(defaultDialogue);
+            SetExpression(0);
+            dialogueToStart = defaultDialogue;
+        }
+
+        if (dialogueToStart != null)
+        {
+            // Reproducir audio de línea inicial
+            PlayDialogueClip(0);
+            // Iniciar diálogo pasando la referencia al NPC y el índice de audio inicial
+            dialogueManager.StartDialogue(dialogueToStart, this, 0);
         }
 
         if (mensajeInteraccion) mensajeInteraccion.SetActive(false);
@@ -96,11 +109,9 @@ public class NPCInteract : MonoBehaviour
 
     private void SetExpression(int expr)
     {
-        // Cambiar animación
         if (animator != null)
             animator.SetInteger("Expression", expr);
 
-        // Cambiar sprite
         if (portraitRenderer != null)
         {
             switch (expr)
@@ -127,5 +138,16 @@ public class NPCInteract : MonoBehaviour
             dialogueManager.EndDialogue();
 
         if (mensajeInteraccion) mensajeInteraccion.SetActive(false);
+    }
+
+    public void PlayDialogueClip(int index)
+    {
+        if (npcAudioSource == null || dialogueClips == null || dialogueClips.Length == 0) return;
+        if (index < 0 || index >= dialogueClips.Length) return;
+
+        npcAudioSource.Stop();
+        npcAudioSource.clip = dialogueClips[index];
+        npcAudioSource.loop = false;
+        npcAudioSource.Play();
     }
 }

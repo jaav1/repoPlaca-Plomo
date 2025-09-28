@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
+  m_Name: Respuesta5
+  m_EditorClassIdentifier: 
+  targetMissionID: NPC_DonTomas
+  speakerName: "Don Tom\xE1s"
+  dialogueText: "Ahora que sab\xE9s, no and\xE9s repiti\xE9ndolo por ah\xED."
+  options:
+  - optionText: "Puede confiar en m\xED, guardar\xE9 silencio."
+    nextDialogue: {fileID: 0}
+    confianzaDelta: 2
+    sospechaDelta: 0
+  - optionText: "Esto se quedar\xE1 entre nosotros\u2026 si conviene."
+    nextDialogue: {fileID: 0}
+    confianzaDelta: 1
+    sospechaDelta: 1
+  - optionText: No prometo nada, la verdad siempre sale.
+    nextDialogue: {fileID: 0}
+    confianzaDelta: 0
+    sospechaDelta: 2
+  dialogueAudio: {fileID: 8300000, guid: 13ff1f5d5322e704e95ae38ec1d72f83, type: 3}
