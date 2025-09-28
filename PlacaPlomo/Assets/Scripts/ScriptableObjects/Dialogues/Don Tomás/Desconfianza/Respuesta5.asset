@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
+  m_Name: Respuesta5
+  m_EditorClassIdentifier: 
+  targetMissionID: NPC_DonTomas
+  speakerName: "Don Tom\xE1s"
+  dialogueText: "Ahora ya sab\xE9s demasiado. Andate antes que me arrepienta de hablar."
+  options:
+  - optionText: "No se preocupe, guardar\xE9 silencio."
+    nextDialogue: {fileID: 0}
+    confianzaDelta: 2
+    sospechaDelta: 0
+  - optionText: "Quiz\xE1 lo guarde\u2026 quiz\xE1 no."
+    nextDialogue: {fileID: 0}
+    confianzaDelta: 1
+    sospechaDelta: 1
+  - optionText: Ya no tiene poder sobre lo que diga.
+    nextDialogue: {fileID: 0}
+    confianzaDelta: 0
+    sospechaDelta: 2
