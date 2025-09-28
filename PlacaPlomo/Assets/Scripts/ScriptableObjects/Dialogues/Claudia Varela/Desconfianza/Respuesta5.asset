@@ -16,15 +16,11 @@ MonoBehaviour:
   speakerName: Claudia Varela
   dialogueText: "Lo que decidiste marcar\xE1 tu destino\u2026 y tambi\xE9n el m\xEDo."
   options:
-  - optionText: Solo quiero que esto acabe de una vez.
+  - optionText: Solo quiero que esto acabe de una vez. (Entregar)
     nextDialogue: {fileID: 0}
     confianzaDelta: 1
     sospechaDelta: 2
-  - optionText: "Lo que pase ya no es asunto m\xEDo."
-    nextDialogue: {fileID: 0}
-    confianzaDelta: 0
-    sospechaDelta: 2
-  - optionText: "Si me busca, sabr\xE1 lo que es meterse conmigo."
+  - optionText: "Si me busca, sabr\xE1 lo que es meterse conmigo. (No entregar)"
     nextDialogue: {fileID: 0}
     confianzaDelta: 0
     sospechaDelta: 3

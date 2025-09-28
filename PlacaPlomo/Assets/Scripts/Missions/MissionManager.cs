@@ -205,11 +205,41 @@ public class MissionManager : MonoBehaviour
     }
 
     // Para pasos con Choice (ej. "ENTREGAR / GUARDAR")
-    public void SubmitChoice(int optionIndex)
+    public void SubmitChoice(string choiceBranch)
     {
         if (current == null || !current.IsChoiceStep) return;
-        string next = optionIndex == 0 ? current.NextOnSuccess : current.NextOnAlt;
-        AdvanceTo(next);
+
+        // Lee el campo ChoiceBranchRaw del CSV: ej. "ENTREGAR / GUARDAR"
+        var branches = current.ChoiceBranchRaw.Split(new[] { '/', ';' }, StringSplitOptions.RemoveEmptyEntries);
+
+        string nextStepId = current.NextOnAlt; // Por defecto va a la rama alternativa (el segundo paso)
+
+        // Busca el texto de la eleccin enviada ("ENTREGAR" o "GUARDAR")
+        bool foundMatch = false;
+        for (int i = 0; i < branches.Length; i++)
+        {
+            if (string.Equals(branches[i].Trim(), choiceBranch, StringComparison.OrdinalIgnoreCase))
+            {
+                // Si la eleccin coincide con el primer elemento (ndice 0) de ChoiceBranchRaw
+                // asumimos que es NextOnSuccess. Cualquier otra cosa es NextOnAlt.
+                if (i == 0)
+                {
+                    nextStepId = current.NextOnSuccess;
+                }
+                else
+                {
+                    // Si coincide con cualquier otra rama (ndice 1, 2, etc.), mantenemos NextOnAlt
+                    nextStepId = current.NextOnAlt;
+                }
+                foundMatch = true;
+                break;
+            }
+        }
+
+        // Si no encuentra una coincidencia exacta, se queda con NextOnAlt por defecto.
+
+        Debug.Log($"[MissionManager] Decisin: {choiceBranch}. Avanzando a: {nextStepId}");
+        AdvanceTo(nextStepId);
     }
 
     private void AdvanceTo(string nextId)

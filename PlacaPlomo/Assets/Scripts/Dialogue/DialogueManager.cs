@@ -157,13 +157,34 @@ public class DialogueManager : MonoBehaviour
         float delta = selected.confianzaDelta - selected.sospechaDelta;
         AddRelacionDelta(delta);
 
+        // --- LÓGICA DE DECISIÓN DE MISIÓN (M1-06) ---
+        // 1. Condición: El diálogo est terminando (nextDialogue == null) Y es Claudia.
+
+        if (selected.nextDialogue == null && currentDialogue.targetMissionID == "NPC_Claudia")
+        {
+            // Esto define la palabra clave: ENTREGAR para el ndice 0, GUARDAR para otros.
+            string choice = (index == 0) ? "ENTREGAR" : "GUARDAR";
+
+            EndDialogue(null);
+
+            // ✅ AQUÍ ESTÁ LA CONEXIÓN (SubmitChoice ahora espera un string)
+            MissionManager.I?.SubmitChoice(choice);
+
+            return;
+        }
+        // ---------------------------------------------
+
+        // Lógica normal (avanzar a siguiente nodo o terminar)
         if (selected.nextDialogue != null)
         {
             currentAudioIndex++; // siguiente clip del NPC
             StartDialogue(selected.nextDialogue, currentNPC, currentAudioIndex);
         }
         else
+        {
+            // Si el diálogo no es la decisión de Claudia, termina y reporta el NPC ID.
             EndDialogue(currentDialogue.targetMissionID);
+        }
     }
 
     public void EndDialogue(string completedNpcId = null)

@@ -16,15 +16,11 @@ MonoBehaviour:
   speakerName: Claudia Varela
   dialogueText: "Sea cual sea tu decisi\xF3n, recuerda que esto puede cambiar todo."
   options:
-  - optionText: "Acepto la responsabilidad de mi decisi\xF3n."
-    nextDialogue: {fileID: 0}
-    confianzaDelta: 2
-    sospechaDelta: 0
-  - optionText: "Lo pensar\xE9 bien antes de actuar."
+  - optionText: 
     nextDialogue: {fileID: 0}
     confianzaDelta: 1
     sospechaDelta: 1
-  - optionText: "No me importa, esto es m\xEDo hasta nuevo aviso."
+  - optionText: "No me importa, esto es m\xEDo hasta nuevo aviso. (No entregar)"
     nextDialogue: {fileID: 0}
     confianzaDelta: 0
     sospechaDelta: 2

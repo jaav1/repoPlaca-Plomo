@@ -16,14 +16,10 @@ MonoBehaviour:
   speakerName: Claudia Varela
   dialogueText: "Hag\xE1s lo que hag\xE1s, sab\xE9 que yo proteger\xE9 lo que decidiste."
   options:
-  - optionText: Gracias, Claudia, puedo confiar en usted.
+  - optionText: Gracias, Claudia, puedo confiar en usted. (Entregar)
     nextDialogue: {fileID: 0}
     confianzaDelta: 2
     sospechaDelta: 0
-  - optionText: "Lo pensar\xE9 antes de actuar."
-    nextDialogue: {fileID: 0}
-    confianzaDelta: 1
-    sospechaDelta: 1
   - optionText: "Si me traiciona, no se lo perdonar\xE9."
     nextDialogue: {fileID: 0}
     confianzaDelta: 0
