@@ -256,4 +256,17 @@ public class MissionManager : MonoBehaviour
     // Utilidad por si necesitas consultar flags/sospecha
     public bool HasFlag(string flag) => flags.Contains(flag);
     public float GetSuspicion() => suspicion;
+
+    // === Helpers para Decisiones ===
+
+    public bool IsCurrentStepAChoice()
+    {
+        return current != null && current.IsChoiceStep;
+    }
+
+    public string GetCurrentStepChoiceBranch()
+    {
+        return current?.ChoiceBranchRaw ?? "";
+    }
+
 }

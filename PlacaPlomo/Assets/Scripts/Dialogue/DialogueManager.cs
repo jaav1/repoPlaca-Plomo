@@ -157,19 +157,26 @@ public class DialogueManager : MonoBehaviour
         float delta = selected.confianzaDelta - selected.sospechaDelta;
         AddRelacionDelta(delta);
 
-        // --- LÓGICA DE DECISIÓN DE MISIÓN (M1-06) ---
-        // 1. Condición: El diálogo est terminando (nextDialogue == null) Y es Claudia.
+        // --- LÓGICA DE DECISIÓN DE MISIÓN (Generalizada) ---
 
-        if (selected.nextDialogue == null && currentDialogue.targetMissionID == "NPC_Claudia")
+        // 1. Condición: El diálogo est terminando Y el paso actual del MissionManager es un paso de Elección.
+        // NOTA: Para que esto funcione, el ScriptableObject Dialogue DEBE tener
+        // targetMissionID igual al step_id (ej: "M1-06")
+
+        if (selected.nextDialogue == null && MissionManager.I != null && MissionManager.I.IsCurrentStepAChoice())
         {
-            // Esto define la palabra clave: ENTREGAR para el ndice 0, GUARDAR para otros.
-            string choice = (index == 0) ? "ENTREGAR" : "GUARDAR";
+            // Conseguir las ramas de decisión del paso actual (ej: "ENTREGAR / GUARDAR")
+            string choiceBranchRaw = MissionManager.I.GetCurrentStepChoiceBranch();
+
+            // Si la opcin seleccionada es la primera opcin del di logo (ndice 0)
+            // asumimos que es la primera rama del ChoiceBranchRaw.
+            // Esto requiere que el orden de las opciones del SO Dialogue coincida con el CSV.
+
+            // Asumimos que la rama de decisin es el texto de la opcin seleccionada.
+            string choice = selected.optionText.Trim().ToUpper();
 
             EndDialogue(null);
-
-            // ✅ AQUÍ ESTÁ LA CONEXIÓN (SubmitChoice ahora espera un string)
             MissionManager.I?.SubmitChoice(choice);
-
             return;
         }
         // ---------------------------------------------

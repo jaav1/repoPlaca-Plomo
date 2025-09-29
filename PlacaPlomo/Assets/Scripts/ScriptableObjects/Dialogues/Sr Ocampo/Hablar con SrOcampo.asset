@@ -10,17 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
-  m_Name: Respuesta5
+  m_Name: Hablar con SrOcampo
   m_EditorClassIdentifier: 
-  targetMissionID: NPC_Claudia
-  speakerName: Claudia Varela
-  dialogueText: "Sea cual sea tu decisi\xF3n, recuerda que esto puede cambiar todo."
+  targetMissionID: NPC_SrOcampo
+  speakerName: SrOcampo
+  dialogueText: Prueba
   options:
-  - optionText: ENTREGAR
-    nextDialogue: {fileID: 0}
-    confianzaDelta: 1
-    sospechaDelta: 1
-  - optionText: "No me importa, esto es m\xEDo hasta nuevo aviso. (No entregar)"
+  - optionText: 1
     nextDialogue: {fileID: 0}
     confianzaDelta: 0
-    sospechaDelta: 2
+    sospechaDelta: 0
+  - optionText: 1
+    nextDialogue: {fileID: 0}
+    confianzaDelta: 0
+    sospechaDelta: 0
+  - optionText: 2
+    nextDialogue: {fileID: 0}
+    confianzaDelta: 0
+    sospechaDelta: 0
