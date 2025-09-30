@@ -10,21 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
-  m_Name: Hablar con SrOcampo
+  m_Name: Respuesta6
   m_EditorClassIdentifier: 
   targetMissionID: NPC_SrOcampo
-  speakerName: SrOcampo
-  dialogueText: Prueba
+  speakerName: Sr.Ocampo
+  dialogueText: "Con esto ten\xE9s lo suficiente. Pero cuidado\u2026 no te metas
+    demasiado r\xE1pido."
   options:
-  - optionText: 1
+  - optionText: "Lo tendr\xE9 en cuenta, gracias."
+    nextDialogue: {fileID: 0}
+    confianzaDelta: 2
+    sospechaDelta: 0
+  - optionText: "Solo har\xE9 lo necesario."
+    nextDialogue: {fileID: 0}
+    confianzaDelta: 1
+    sospechaDelta: 1
+  - optionText: "No me diga c\xF3mo hacer mi trabajo."
     nextDialogue: {fileID: 0}
     confianzaDelta: 0
-    sospechaDelta: 0
-  - optionText: 1
-    nextDialogue: {fileID: 0}
-    confianzaDelta: 0
-    sospechaDelta: 0
-  - optionText: 2
-    nextDialogue: {fileID: 0}
-    confianzaDelta: 0
-    sospechaDelta: 0
+    sospechaDelta: 2
