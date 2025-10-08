@@ -8,7 +8,7 @@ public class PlayerMovement : MonoBehaviour
     // Variable para activar y desactivar los controles del jugador.
     [Header("Funcionalidad")]
     public bool controlsEnabled = true;
-        
+
     // Variables ajustables en el Inspector de Unity para el movimiento del jugador.
     [Header("Movimiento")]
     [SerializeField] private float moveSpeed = 5f;
@@ -34,7 +34,6 @@ public class PlayerMovement : MonoBehaviour
 
     // --- Métodos de ciclo de vida de Unity ---
 
-    // Se ejecuta al inicio, inicializando el Rigidbody y configurando el cursor.
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -45,7 +44,6 @@ public class PlayerMovement : MonoBehaviour
             Debug.LogError("CameraHolder no asignado.");
     }
 
-    // Se ejecuta en cada fotograma, manejando la entrada del jugador y la cámara.
     void Update()
     {
         // Si los controles no están habilitados, no hacemos nada.
@@ -54,7 +52,6 @@ public class PlayerMovement : MonoBehaviour
         HandleMouseLook();
         CheckGrounded();
 
-        // Registra la entrada del salto para que sea procesada en FixedUpdate.
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
             jumpInput = true;
@@ -63,7 +60,6 @@ public class PlayerMovement : MonoBehaviour
         HandleFootsteps();
     }
 
-    // Se ejecuta en un intervalo de tiempo fijo, ideal para operaciones de física.
     void FixedUpdate()
     {
         // Si los controles no están habilitados, no hacemos nada.
@@ -75,7 +71,6 @@ public class PlayerMovement : MonoBehaviour
 
     // --- Métodos de funcionalidad del jugador ---
 
-    // Controla la rotación de la cámara del jugador usando el movimiento del ratón.
     private void HandleMouseLook()
     {
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
@@ -88,7 +83,6 @@ public class PlayerMovement : MonoBehaviour
         transform.Rotate(Vector3.up * mouseX);
     }
 
-    // Maneja el movimiento horizontal del jugador aplicando velocidad al Rigidbody.
     private void HandleMovement()
     {
         float h = Input.GetAxis("Horizontal");
@@ -97,10 +91,10 @@ public class PlayerMovement : MonoBehaviour
         Vector3 move = transform.forward * v + transform.right * h;
         move = move.normalized * moveSpeed;
 
+        // Mantiene la velocidad vertical actual (la gravedad)
         rb.linearVelocity = new Vector3(move.x, rb.linearVelocity.y, move.z);
     }
 
-    // Aplica una fuerza de salto al Rigidbody si la entrada de salto está registrada.
     private void HandleJump()
     {
         if (jumpInput)
@@ -110,13 +104,11 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // Comprueba si el jugador está en contacto con una capa de suelo.
     private void CheckGrounded()
     {
         isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayer);
     }
 
-    // Controla la reproducción de los sonidos de pasos según si el jugador se está moviendo.
     private void HandleFootsteps()
     {
         bool isMoving = Input.GetAxis("Horizontal") != 0 || Input.GetAxis("Vertical") != 0;
@@ -128,6 +120,41 @@ public class PlayerMovement : MonoBehaviour
         else if (!isMoving && pasos.isPlaying)
         {
             pasos.Pause();
+        }
+    }
+
+    // === Método de la API Pública para MissionManager ===
+
+    /// <summary>
+    /// Mueve el Rigidbody del jugador a una nueva posición de forma segura.
+    /// </summary>
+    public void TeleportTo(Vector3 newPosition)
+    {
+        if (rb == null) return;
+
+        // Detenemos la velocidad inmediatamente
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        // Teletransporta al jugador
+        rb.MovePosition(newPosition);
+
+        jumpInput = false;
+        isGrounded = true;
+    }
+
+    public void EnableControls()
+    {
+        controlsEnabled = true;
+    }
+
+    public void DisableControls()
+    {
+        controlsEnabled = false;
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero; // Detener el movimiento inmediatamente
+            rb.angularVelocity = Vector3.zero;
         }
     }
 

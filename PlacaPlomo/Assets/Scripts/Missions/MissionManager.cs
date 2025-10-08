@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 using TMPro; // Para HUD
 
@@ -21,6 +22,15 @@ public class MissionManager : MonoBehaviour
     // Para pasos que requieren múltiples eventos
     private readonly HashSet<string> _satisfiedForThisStep = new();
 
+    private Coroutine chaseTimerRoutine;
+
+    private GameObject enemyObjRef;
+    private Transform playerTransformRef;
+
+    private Coroutine successCheckRoutine;
+
+    private VehicleInteraction vehicleInteractionRef;
+
     #region Singleton simple (opcional)
     public static MissionManager I { get; private set; }
     private void Awake()
@@ -28,6 +38,22 @@ public class MissionManager : MonoBehaviour
         if (I != null && I != this) { Destroy(gameObject); return; }
         I = this;
         DontDestroyOnLoad(gameObject);
+
+        // *** INICIALIZACIÓN DE REFERENCIAS ***
+        enemyObjRef = GameObject.Find("E_Perseguidor");
+
+        GameObject player = GameObject.FindWithTag("Player");
+        if (player != null) playerTransformRef = player.transform;
+        else Debug.LogError("Awake(): ¡El objeto del Jugador no fue encontrado con la etiqueta 'Player'!");
+
+        // Agrega la búsqueda del VehicleInteraction
+        GameObject carObj = GameObject.Find("Car"); // <-- Usa el mismo que en PursuerNavMeshAI
+        if (carObj != null)
+        {
+            vehicleInteractionRef = carObj.GetComponent<VehicleInteraction>();
+        }
+        if (vehicleInteractionRef == null) Debug.LogWarning("VehicleInteraction no encontrado. La misión de persecución puede fallar.");
+
         LoadCsv();
     }
     #endregion
@@ -46,6 +72,7 @@ public class MissionManager : MonoBehaviour
         if (lines.Length <= 1) { Debug.LogError("CSV vacío."); return; }
 
         // Encabezados
+        // Asumo que tienes clases como CsvUtility, MissionStep, MissionEventReq, TriggerType, MissionParsers.
         var headers = CsvUtility.ParseLine(lines[0]);
         var idx = new Dictionary<string, int>();
         for (int i = 0; i < headers.Count; i++) idx[headers[i]] = i;
@@ -82,12 +109,6 @@ public class MissionManager : MonoBehaviour
             var requiredItems = MissionParsers.ParseListByComma(Cell(row, "required_items"));
             step.RequiredItems = requiredItems;
 
-            if (step.StepId == "M1-03")
-            {
-                Debug.Log($"[CSV Loader] Paso M1-03 leído. Triggers: {triggers.Count} | Targets: {targets.Count}");
-                Debug.Log($"[CSV Loader] Contenido crudo de 'target_ids': '{Cell(row, "target_ids")}'");
-            }
-
             int count = Mathf.Min(triggers.Count, targets.Count);
             for (int i = 0; i < count; i++)
             {
@@ -98,7 +119,7 @@ public class MissionManager : MonoBehaviour
                     Completed = false
                 });
             }
-            // Si hay triggers sin target (o viceversa), lo reportamos:
+
             if (triggers.Count != targets.Count)
                 Debug.LogWarning($"[{step.StepId}] Triggers({triggers.Count}) != Targets({targets.Count}). Revisa el CSV.");
 
@@ -107,6 +128,24 @@ public class MissionManager : MonoBehaviour
         }
 
         Debug.Log($"MissionManager: cargadas {stepsById.Count} filas del CSV.");
+    }
+
+    // Método para obtener el Transform que debe escapar
+    public Transform GetChaseTarget()
+    {
+        // Si la referencia al jugador no está, la busca (como en GetPlayerTransform)
+        if (playerTransformRef == null) GetPlayerTransform();
+
+        // Si el jugador está DENTRO del coche, el target de escape es el coche.
+        if (vehicleInteractionRef != null && vehicleInteractionRef.IsPlayerInside)
+        {
+            // Asumiendo que vehicleInteraction está en el mismo objeto que CarController,
+            // y ese objeto es el coche.
+            return vehicleInteractionRef.transform;
+        }
+
+        // Si no, el target de escape es el jugador.
+        return playerTransformRef;
     }
 
     public void GoToStep(string stepId)
@@ -120,14 +159,14 @@ public class MissionManager : MonoBehaviour
         _satisfiedForThisStep.Clear();
         foreach (var r in current.Requirements) r.Completed = false;
 
-        // Aplica delta de sospecha al ENTER del paso (si así lo quieres)
+        // Aplica delta de sospecha al ENTER del paso
         if (Mathf.Abs(current.SuspicionDelta) > 0.0001f)
         {
             suspicion = Mathf.Max(0f, suspicion + current.SuspicionDelta);
             // TODO: actualizar UI de sospecha si existe
         }
 
-        // Flags (solo las no condicionales con formato FLAG=1 / FLAG=0)
+        // Flags
         ApplyFlags(current.AddsFlagsRaw, add: true);
         ApplyFlags(current.RemovesFlagsRaw, add: false);
 
@@ -135,12 +174,84 @@ public class MissionManager : MonoBehaviour
         if (objectiveHUD) objectiveHUD.SetText(current.OnScreenText);
 
         Debug.Log($"[MISSION] {current.StepId} ? {current.StepTitle}");
+
+        // Lógica específica para el paso de persecución M1-08
+        if (current.StepId == "M1-08")
+        {
+            GameObject startPoint = GameObject.Find("M1-08_START");
+            if (startPoint != null)
+            {
+                // 1. Mover al jugador al punto de inicio (con distancia)
+                Transform playerTransform = GetPlayerTransform();
+                PlayerMovement playerMovement = playerTransform?.GetComponent<PlayerMovement>();
+
+                if (playerMovement != null)
+                {
+                    // Usa una distancia de 30m para el inicio, o 15m si usas la variable del restart
+                    float startDistance = 30f;
+                    Vector3 destination = startPoint.transform.position + startPoint.transform.forward * startDistance;
+
+                    playerMovement.TeleportTo(destination);
+
+                    // **CORRECCIÓN CRUCIAL:** HABILITAR los controles del jugador al inicio/reinicio del paso.
+                    playerMovement.EnableControls();
+                }
+
+                // 2. Mover al NPC al punto de inicio
+                GameObject enemyObj = GameObject.Find("E_Perseguidor");
+                if (enemyObj != null)
+                {
+                    Rigidbody enemyRB = enemyObj.GetComponent<Rigidbody>();
+                    if (enemyRB != null)
+                    {
+                        enemyRB.position = startPoint.transform.position;
+                        enemyRB.rotation = startPoint.transform.rotation;
+                    }
+                    else
+                    {
+                        enemyObj.transform.position = startPoint.transform.position;
+                        enemyObj.transform.rotation = startPoint.transform.rotation;
+                    }
+
+                    // 3. Activar la IA del perseguidor
+                    enemyObj.GetComponent<PursuerNavMeshAI>()?.StartChase();
+                }
+
+            }
+            else
+            {
+                Debug.LogError("M1-08_START no encontrado. No se puede iniciar la persecución correctamente.");
+                return;
+            }
+
+            // 4. Iniciar el temporizador para el fracaso por tiempo (30 segundos)
+            if (chaseTimerRoutine != null) StopCoroutine(chaseTimerRoutine); // Asegura que no hay 2 corriendo
+            chaseTimerRoutine = StartCoroutine(ChaseTimer(60f, current.StepId)); // <--- CORRECCIÓN
+        }
+
+        // Lógica específica para activar la pizarra
+        if (current.StepId == "M1-09A")
+        {
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+            // Asegúrate de que tu ChalkboardSolver esté implementado como un Singleton 
+            // o búscalo con GameObject.Find.
+            ChalkboardSolver solver = FindFirstObjectByType<ChalkboardSolver>();
+            if (solver != null)
+            {
+                solver.ShowChalkboard();
+                // El solver se encargará de reportar el evento de éxito cuando se resuelva.
+            }
+            else
+            {
+                Debug.LogError("ChalkboardSolver no encontrado en la escena.");
+            }
+        }
     }
 
     private void ApplyFlags(string flagsRaw, bool add)
     {
         if (string.IsNullOrWhiteSpace(flagsRaw)) return;
-        // Formato esperado: "FLAG=1; OTRAFLAG=0" (líneas con "if" se ignoran)
         var parts = flagsRaw.Split(';');
         foreach (var p in parts)
         {
@@ -158,17 +269,49 @@ public class MissionManager : MonoBehaviour
         }
     }
 
+    private IEnumerator ContinuousSuccessCheck()
+    {
+        // Espera un pequeño momento para que la física se asiente
+        yield return null;
+
+        while (current != null && current.StepId == "M1-08") // Asegura que solo corre en M1-08
+        {
+            Debug.Log("... Chequeando distancia de escape (bucle activo) ...");
+
+            // Llama a CheckSuccessCondition (que ahora SÍ imprime la distancia)
+            if (CheckSuccessCondition(current, TriggerType.ReachZone))
+            {
+                TempMessageDisplay.Instance.ShowMessage("¡HAS ESCAPADO! Misión completada.");
+
+                // Éxito confirmado.
+                string nextStep = current.NextOnSuccess;
+
+                // *** DEBUG CRÍTICO PARA CONFIRMAR EL DESTINO ***
+                Debug.Log($"¡CORRUTINA CONFIRMA ÉXITO! Avanzando a: {nextStep}");
+
+                // 1. Detener al perseguidor de nuevo, si fuera necesario (aunque ya está 'desactivado')
+                enemyObjRef?.GetComponent<PursuerNavMeshAI>()?.StopChase();
+
+                // 2. Avanzar el paso
+                AdvanceTo(nextStep);
+
+                break; // Sale del bucle
+            }
+
+            yield return new WaitForSeconds(0.2f);
+        }
+
+        // Muy importante: detiene la corrutina y limpia la referencia
+        successCheckRoutine = null;
+        Debug.Log("Corrutina de chequeo de éxito finalizada.");
+    }
+
     // === API pública para que el juego reporte eventos ===
-    
     public void ReportEvent(TriggerType type, string targetId)
     {
         if (current == null) return;
 
-        // === LÍNEAS DE DEPURACIÓN ===
-        Debug.Log($"[MissionManager] Recibido evento: Tipo '{type}', Objetivo '{targetId}'.");
-        Debug.Log($"[MissionManager] Paso de misión actual: {current.StepId}. Requisitos: {current.Requirements.Count}");
 
-        // Marca requerimiento cumplido en la lista
         bool anyMatched = false;
         foreach (var req in current.Requirements)
         {
@@ -177,29 +320,51 @@ public class MissionManager : MonoBehaviour
                 req.Completed = true;
                 _satisfiedForThisStep.Add($"{type}:{targetId}");
                 anyMatched = true;
-                break; // Salimos del bucle una vez que encontramos una coincidencia
+
+                // *** LÓGICA ESPECÍFICA PARA M1-08 Y REACHZONE ***
+                if (current.StepId == "M1-08" && req.Type == TriggerType.ReachZone)
+                {
+                    // 1. Cancelar Timer
+                    if (chaseTimerRoutine != null)
+                    {
+                        StopCoroutine(chaseTimerRoutine);
+                        chaseTimerRoutine = null;
+                        Debug.Log("ChaseTimer cancelado: Jugador alcanzó la zona segura.");
+                    }
+
+                    // 2. Detener Perseguidor
+                    enemyObjRef?.GetComponent<PursuerNavMeshAI>()?.StopChase();
+                    Debug.Log("Perseguidor congelado: Chequeando distancia de escape.");
+
+                    // 3. INICIAR CHEQUEO CONTINUO
+                    if (successCheckRoutine == null)
+                    {
+                        successCheckRoutine = StartCoroutine(ContinuousSuccessCheck());
+                        Debug.Log("Iniciada Corrutina de Chequeo de Éxito.");
+                    }
+
+                    break; // Salimos del foreach, ya encontramos el requisito
+                }
+
+                break; // Salimos del foreach, ya encontramos el requisito
             }
         }
 
-        if (!anyMatched)
-        {
-            Debug.LogWarning($"[MissionManager] Evento reportado no coincide con ningún requisito del paso actual.");
-            return;
-        }
+        if (!anyMatched) return;
 
         // AHORA verificamos si todos los requisitos han sido cumplidos
-        // comparando el número de requisitos satisfechos con el total.
-        if (_satisfiedForThisStep.Count == current.Requirements.Count)
+        if (anyMatched && _satisfiedForThisStep.Count == current.Requirements.Count)
         {
-            // Si NO es paso de elección, avanzar directo por NextOnSuccess
-            if (!current.IsChoiceStep)
+            if (CheckSuccessCondition(current, type))
             {
-                AdvanceTo(current.NextOnSuccess);
-            }
-            else
-            {
-                // Paso con elección: espera SubmitChoice(..)
-                if (objectiveHUD) objectiveHUD.SetText(current.OnScreenText + " (elige una opción)");
+                if (!current.IsChoiceStep)
+                {
+                    AdvanceTo(current.NextOnSuccess);
+                }
+                else
+                {
+                    if (objectiveHUD) objectiveHUD.SetText(current.OnScreenText + " (elige una opción)");
+                }
             }
         }
     }
@@ -209,36 +374,56 @@ public class MissionManager : MonoBehaviour
     {
         if (current == null || !current.IsChoiceStep) return;
 
-        // Lee el campo ChoiceBranchRaw del CSV: ej. "ENTREGAR / GUARDAR"
         var branches = current.ChoiceBranchRaw.Split(new[] { '/', ';' }, StringSplitOptions.RemoveEmptyEntries);
 
         string nextStepId = current.NextOnAlt; // Por defecto va a la rama alternativa (el segundo paso)
 
-        // Busca el texto de la eleccin enviada ("ENTREGAR" o "GUARDAR")
-        bool foundMatch = false;
+        // Busca el texto de la elección enviada ("ENTREGAR" o "GUARDAR")
         for (int i = 0; i < branches.Length; i++)
         {
             if (string.Equals(branches[i].Trim(), choiceBranch, StringComparison.OrdinalIgnoreCase))
             {
-                // Si la eleccin coincide con el primer elemento (ndice 0) de ChoiceBranchRaw
-                // asumimos que es NextOnSuccess. Cualquier otra cosa es NextOnAlt.
+                // Si la elección coincide con el primer elemento (índice 0)
                 if (i == 0)
                 {
                     nextStepId = current.NextOnSuccess;
                 }
+                // Cualquier otro índice usa NextOnAlt (asumiendo que solo hay dos opciones)
                 else
                 {
-                    // Si coincide con cualquier otra rama (ndice 1, 2, etc.), mantenemos NextOnAlt
                     nextStepId = current.NextOnAlt;
                 }
-                foundMatch = true;
                 break;
             }
         }
 
-        // Si no encuentra una coincidencia exacta, se queda con NextOnAlt por defecto.
+        // LÓGICA M2-02 (Acceso Trasero)
+        if (current.StepId == "M2-02")
+        {
+            // Si el camino es NextOnSuccess (M2-03A)
+            if (nextStepId == current.NextOnSuccess)
+            {
+                ApplyFlags("Acceso_Trasero=1", add: true);
+                Debug.Log("[M2-02] Flag 'Acceso_Trasero' aplicado. La puerta trasera ahora está abierta.");
+            }
+            else // Si es el camino NextOnAlt (M2-03B)
+            {
+                // Opcional: Asegurarse de que el flag no esté puesto
+                ApplyFlags("Acceso_Trasero=1", add: false);
+            }
+        }
 
-        Debug.Log($"[MissionManager] Decisin: {choiceBranch}. Avanzando a: {nextStepId}");
+        // LÓGICA M2-06 (Conflicto en la Iglesia)
+        if (current.StepId == "M2-06")
+        {
+            // Aquí debes verificar la elección específica o el ID del paso de éxito (M2-07A)
+            if (choiceBranch.Equals("Confrontar", StringComparison.OrdinalIgnoreCase))
+            {
+                ApplyFlags("ConflictoIglesia=1", add: true);
+            }
+        }
+
+        Debug.Log($"[MissionManager] Decisión: {choiceBranch}. Avanzando a: {nextStepId}");
         AdvanceTo(nextStepId);
     }
 
@@ -250,7 +435,18 @@ public class MissionManager : MonoBehaviour
             if (objectiveHUD) objectiveHUD.SetText("Misión actual completa.");
             return;
         }
-        GoToStep(nextId);
+        // llamamos al CinematicManager para que reproduzca la introducción 
+        // de la nueva misión y luego llame a GoToStep.
+
+        if (CinematicManager.I != null)
+        {
+            CinematicManager.I.StartMissionIntro(nextId);
+        }
+        else
+        {
+            // Fallback: si el CinematicManager no está listo, vamos directo al paso.
+            GoToStep(nextId);
+        }
     }
 
     // Utilidad por si necesitas consultar flags/sospecha
@@ -269,4 +465,182 @@ public class MissionManager : MonoBehaviour
         return current?.ChoiceBranchRaw ?? "";
     }
 
+    public bool CheckSuccessCondition(MissionStep currentStep, TriggerType lastTrigger)
+    {
+        // Solo chequea si todos los requisitos (incluyendo ReachZone) se cumplieron
+        bool allRequirementsMet = _satisfiedForThisStep.Count == currentStep.Requirements.Count;
+
+        // LÓGICA M1-08: SOBREESCRIBE LA CONDICIÓN DE ÉXITO ESTÁNDAR
+        if (currentStep.StepId == "M1-08")
+        {
+            Transform escapeTarget = GetChaseTarget();
+
+            if (enemyObjRef != null && escapeTarget != null)
+            {
+                float distanceToEnemy = Vector3.Distance(escapeTarget.position, enemyObjRef.transform.position);
+                float escapeThreshold = 20f;
+
+                // EL DEBUG MÁS IMPORTANTE
+                Debug.Log($"[DISTANCIA REAL FINAL] Distancia actual: {distanceToEnemy:F2}m. Target: >{escapeThreshold}m. Target Name: {escapeTarget.name}");
+
+                // LA ÚNICA CONDICIÓN DE ÉXITO DEBE SER LA DISTANCIA
+                if (distanceToEnemy > escapeThreshold)
+                {
+                    // Si la distancia es OK, y ya se cumplió el requisito de la zona, avanzamos.
+                    // Como esta corrutina SOLO empieza después de cumplir el ReachZone, 
+                    // podemos estar seguros de que si llegamos aquí, SÍ está listo para avanzar.
+                    Debug.Log("¡Escape EXITOSO! Distancia cumplida. Avanzando misión.");
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                // (Tu lógica de error de referencia que ya está funcionando)
+                if (enemyObjRef == null) Debug.LogError("CheckSuccessCondition: E_Perseguidor es NULL. Fallo de referencia.");
+                if (playerTransformRef == null) Debug.LogError("CheckSuccessCondition: Player es NULL. Fallo de referencia.");
+                return false;
+            }
+        }
+
+        // Para todos los demás pasos, simplemente devolvemos si todos los requisitos se cumplieron.
+        return allRequirementsMet;
+    }
+
+    // Corrutina para manejar el tiempo límite de la persecución
+    private IEnumerator ChaseTimer(float duration, string startStepID)
+    {
+        yield return new WaitForSeconds(duration);
+
+        if (current != null && current.StepId == startStepID)
+        {
+            TempMessageDisplay.Instance.ShowMessage("TIEMPO AGOTADO. No pudiste escapar.");
+            Debug.LogWarning($"El tiempo de persecución terminó ({duration}s). Reiniciando M1-08.");
+
+            // No necesitas ReportFailure aquí, solo llamas al delay de reinicio.
+            StartCoroutine(RestartAfterDelay(1.5f, current.StepId));
+        }
+    }
+
+    public void ReportFailure(string failureReason)
+    {
+        // Solo si estamos en la misión 08 (o la misión activa)
+        if (current != null && current.StepId == "M1-08")
+        {
+            // 1. Detener al NPC inmediatamente (usamos la referencia de clase)
+            enemyObjRef?.GetComponent<PursuerNavMeshAI>()?.StopChase();
+
+            // 2. DESHABILITAR EL MOVIMIENTO DEL JUGADOR al fallar
+            // Usamos GetPlayerTransform() para asegurar que la referencia de CLASE esté fresca.
+            Transform playerTransform = GetPlayerTransform();
+            playerTransform?.GetComponent<PlayerMovement>()?.DisableControls();
+
+            Debug.LogError($"Fracaso en M1-08: {failureReason}. Reiniciando...");
+
+            // 3. Reiniciar el paso
+            RestartFromStep(current.StepId);
+        }
+    }
+
+    public Transform GetPlayerTransform()
+    {
+        // Si la referencia de clase es null, la buscamos y la guardamos.
+        if (playerTransformRef == null)
+        {
+            GameObject player = GameObject.FindWithTag("Player");
+            if (player != null)
+            {
+                playerTransformRef = player.transform;
+                return playerTransformRef;
+            }
+
+            Debug.LogError("Player object not found with tag 'Player'!");
+            return null;
+        }
+
+        // Si ya existe, solo la devolvemos.
+        return playerTransformRef;
+    }
+
+    // Método para reiniciar el estado de un paso
+    public void RestartFromStep(string stepId)
+    {
+        // 1. Encontrar el punto de reinicio (Checkpoint)
+        GameObject startPoint = GameObject.Find(stepId + "_START");
+        if (startPoint == null)
+        {
+            Debug.LogError($"[REINICIO] Punto de inicio no encontrado para el paso: {stepId}_START. No se puede reiniciar.");
+            return;
+        }
+
+        // 2. Detener y reubicar al perseguidor (usamos la referencia de clase)
+        if (enemyObjRef != null)
+        {
+            PursuerNavMeshAI pursuer = enemyObjRef.GetComponent<PursuerNavMeshAI>();
+            pursuer?.StopChase();
+
+            // 3. Reubicar el NPC al punto de inicio (usamos la referencia de clase)
+            // ... (Tu lógica de reubicación usando enemyObjRef)
+            Rigidbody enemyRB = enemyObjRef.GetComponent<Rigidbody>();
+            if (enemyRB != null)
+            {
+                // ... (Tu lógica de reubicación es correcta)
+                enemyRB.transform.position = startPoint.transform.position;
+                enemyRB.transform.rotation = startPoint.transform.rotation;
+            }
+            else
+            {
+                enemyObjRef.transform.position = startPoint.transform.position;
+                enemyObjRef.transform.rotation = startPoint.transform.rotation;
+            }
+        }
+
+        // 4. Mover al jugador al punto de inicio (usamos GetPlayerTransform() para la referencia fresca)
+        Transform playerTransform = GetPlayerTransform();
+        if (playerTransform != null)
+        {
+            // ... (Tu lógica de reubicación del jugador es correcta)
+            Vector3 destination = startPoint.transform.position + startPoint.transform.forward * 30f;
+            playerTransform.GetComponent<PlayerMovement>()?.TeleportTo(destination);
+        }
+
+        // 5. Iniciar la lógica del paso
+        Debug.Log($"[REINICIO] Regresando al paso: {stepId}");
+        // Esto llama a GoToStep, que re-habilita al Jugador y al NPC (llama a StartChase).
+        GoToStep(stepId);
+    }
+
+    public void PlayerCaught()
+    {
+        if (current.StepId == "M1-08")
+        {
+            // Detener chequeo de éxito si existe
+            if (successCheckRoutine != null)
+            {
+                StopCoroutine(successCheckRoutine);
+                successCheckRoutine = null;
+            }
+
+            // 1. Mostrar mensaje de fallo
+            TempMessageDisplay.Instance.ShowMessage("¡TE HAN ATRAPADO! Reiniciando...");
+
+            // 2. Iniciar el retraso para el reinicio
+            StartCoroutine(RestartAfterDelay(1.5f, current.StepId));
+        }
+    }
+
+    // CORRUTINA: Para que el mensaje se muestre antes de reiniciar
+    private IEnumerator RestartAfterDelay(float delay, string stepId)
+    {
+        // Deshabilitar el control del jugador para evitar movimiento durante el mensaje
+        GetPlayerTransform()?.GetComponent<PlayerMovement>()?.DisableControls();
+
+        yield return new WaitForSeconds(delay);
+
+        // Reiniciar el paso después del mensaje
+        RestartFromStep(stepId);
+    }
 }

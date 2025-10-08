@@ -9,15 +9,22 @@ public class Door : MonoBehaviour
     public float openAngle = 90f;
     public float openSpeed = 2f;
 
+    [Header("Mission Logic")]
+    [Tooltip("Flag de Misión que otorga acceso libre a esta puerta (ej: Acceso_Trasero).")]
+    public string requiredMissionFlag = ""; // DEJAR VACÍO POR DEFECTO
+
     public AudioClip openDoor;
     public AudioClip closeDoor;
 
+    // Referencia al MissionManager
+    private MissionManager missionManager;
     private RadialInventoryManager inventory;
     private bool playerInRange = false;
 
     void Start()
     {
         inventory = FindFirstObjectByType<RadialInventoryManager>();
+        missionManager = MissionManager.I;
     }
 
     void Update()
@@ -27,14 +34,26 @@ public class Door : MonoBehaviour
             if (isOpen)
                 CloseDoor();
             else
-                TryOpen();
+                TryOpenWithMissionLogic();
         }
     }
 
-    void TryOpen()
+    void TryOpenWithMissionLogic()
     {
+        // 1. PRIMERO: Verificar si el flag de la misión da acceso (Ruta M2-03A)
+        if (!string.IsNullOrEmpty(requiredMissionFlag) && missionManager != null && missionManager.HasFlag(requiredMissionFlag))
+        {
+            // El flag de la misión está puesto, el acceso es libre.
+            isOpen = true;
+            StopAllCoroutines();
+            StartCoroutine(OpenRoutine());
+            return;
+        }
+
+        // 2. SEGUNDO: Si no hay flag, o si el flag no está puesto, usar la lógica normal de llave (Ruta M2-03B)
         if (string.IsNullOrEmpty(requiredKey))
         {
+            // Es una puerta sin llave, acceso libre.
             isOpen = true;
             StopAllCoroutines();
             StartCoroutine(OpenRoutine());
@@ -43,12 +62,14 @@ public class Door : MonoBehaviour
 
         if (inventory != null && inventory.HasItem(requiredKey))
         {
+            // El jugador tiene la llave requerida.
             isOpen = true;
             StopAllCoroutines();
             StartCoroutine(OpenRoutine());
         }
         else
         {
+            // Puerta cerrada por llave.
             if (doorUIText != null)
                 doorUIText.ShowText($"Necesitas la llave \"{requiredKey}\".");
             else

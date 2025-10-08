@@ -10,6 +10,11 @@ public class VehicleInteraction : MonoBehaviour
     public Transform entryPoint;
     public Transform interiorCameraPoint;
 
+    #region Singleton
+    public static VehicleInteraction I { get; private set; }
+    public bool IsPlayerInside => isPlayerInside; // Propiedad pública de solo lectura
+    #endregion
+
     [Header("Referencias de UI")]
     public TMP_Text interactionText;
     public GameObject interactionPanel;
@@ -49,6 +54,9 @@ public class VehicleInteraction : MonoBehaviour
 
     void Awake()
     {
+        if (I != null && I != this) { Destroy(gameObject); return; }
+        I = this; // Inicialización del Singleton
+
         carController = GetComponent<CarController>();
         if (carIgnition == null) carIgnition = GetComponent<CarIgnition>();
     }

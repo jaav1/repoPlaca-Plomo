@@ -102,11 +102,21 @@ public class PhotoManager : MonoBehaviour
             // Salir de la cámara al presionar TAB
             if (Input.GetKeyDown(KeyCode.Tab))
             {
-                ExitCameraView();
+                // NOTA: Si el panel de previsualización está activo (después de tomar foto), 
+                // DiscardPhoto() es la mejor opción. Asumimos que TAB cierra la vista previa.
+                if (photoPreviewPanel.activeSelf)
+                {
+                    DiscardPhoto();
+                }
+                else
+                {
+                    ExitCameraView();
+                }
             }
             // Tomar foto al presionar SPACE
             else if (Input.GetKeyDown(KeyCode.Space))
             {
+                // Detenemos la corrutina si ya está corriendo para evitar errores.
                 StartCoroutine(TakeScreenshotAndPreview());
             }
 
@@ -142,6 +152,9 @@ public class PhotoManager : MonoBehaviour
         RaycastHit hit;
         Ray ray = photoCamera.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
 
+        // Espera un frame para que la UI se oculte y el raycast sea preciso
+        yield return new WaitForEndOfFrame();
+
         if (Physics.Raycast(ray, out hit, 100f)) // El "100f" es la distancia máxima del rayo
         {
             // Comprueba si el objeto impactado tiene el componente MissionTarget
@@ -149,9 +162,12 @@ public class PhotoManager : MonoBehaviour
             if (missionTarget != null)
             {
                 detectedTargetId = missionTarget.targetId;
-                // Reporta el evento de foto al gestor de misiones
+
+                // ************ ESTE ES EL CAMBIO CLAVE ************
+                // Reportamos el evento ANTES de tomar la captura para dar tiempo al MissionManager.
                 MissionManager.I?.ReportEvent(TriggerType.TakePhoto, detectedTargetId);
                 Debug.Log("Foto tomada de objetivo: " + detectedTargetId);
+                // **************************************************
             }
         }
         else
@@ -159,10 +175,11 @@ public class PhotoManager : MonoBehaviour
             Debug.Log("Foto tomada, pero ningún objetivo de misión fue detectado.");
         }
 
+
         // --- FIN DE LA NUEVA LÓGICA ---
 
         // Espera un frame para que la UI se oculte antes de tomar la captura
-        yield return new WaitForEndOfFrame();
+        yield return new WaitForSeconds(0.1f);
 
         Texture2D screenshot = ScreenCapture.CaptureScreenshotAsTexture();
         Sprite photoSprite = Sprite.Create(screenshot, new Rect(0, 0, screenshot.width, screenshot.height), new Vector2(0.5f, 0.5f));

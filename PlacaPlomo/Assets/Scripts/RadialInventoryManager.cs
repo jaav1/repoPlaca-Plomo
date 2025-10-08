@@ -87,13 +87,13 @@ public class RadialInventoryManager : MonoBehaviour
 
     private Vector2[] slotPositions = new Vector2[]
     {
-        new Vector2(-50, 91),
-        new Vector2(50, 91),
-        new Vector2(105, 18),
-        new Vector2(99, -60),
-        new Vector2(0, -100),
-        new Vector2(-99, -60),
-        new Vector2(-105, 18)
+        new Vector2(-103, 188),
+        new Vector2(95, 188),
+        new Vector2(206, 44),
+        new Vector2(189, -119),
+        new Vector2(-4, -197),
+        new Vector2(-204, -119),
+        new Vector2(-217, 44)
     };
 
     string CurrentPage => pageOrder.Count > 0 ? pageOrder[currentPageIndex] : "";
