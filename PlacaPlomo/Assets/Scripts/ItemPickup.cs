@@ -16,12 +16,16 @@ public class ItemPickup : MonoBehaviour
     private bool canPickup = false;         // Indica si el jugador está dentro del área de recogida
     private PickupTextUI pickupTextUI;      // Referencia al UI que muestra el mensaje "Presiona E..."
     private RadialInventoryManager inventoryManager; // Referencia al sistema de inventario radial
+    private MissionManager missionManager;
 
     void Start()
     {
         // Buscar las referencias automáticamente al iniciar
         pickupTextUI = FindFirstObjectByType<PickupTextUI>();
         inventoryManager = FindFirstObjectByType<RadialInventoryManager>();
+
+        // Asignación del Singleton de MissionManager
+        missionManager = MissionManager.I;
 
         // Se asegura de que haya un GameManager en la escena
         if (GameManager.instancia == null)
@@ -58,6 +62,14 @@ public class ItemPickup : MonoBehaviour
                 // Reproducir sonido de recogida si existe
                 if (pickupSound != null && audioSource != null)
                     audioSource.PlayOneShot(pickupSound);
+
+                // NOTIFICAR AL MISSION MANAGER
+                if (missionManager != null && !string.IsNullOrEmpty(itemId))
+                {
+                    // Reportamos que un objeto ha sido recogido, usando itemId como target.
+                    missionManager.ReportEvent(TriggerType.Pickup, itemId);
+                    Debug.Log($"[ItemPickup] Reportado al MissionManager: Trigger=Pickup, Target={itemId}");
+                }
 
                 // NOTIFICA AL GAMEMANAGER QUE EL OBJETO FUE RECOGIDO
                 if (GameManager.instancia != null)

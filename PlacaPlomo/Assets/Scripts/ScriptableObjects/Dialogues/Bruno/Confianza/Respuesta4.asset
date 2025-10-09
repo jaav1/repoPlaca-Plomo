@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
+  m_Name: Respuesta4
+  m_EditorClassIdentifier: 
+  targetMissionID: NPC_Bruno
+  speakerName: Bruno
+  dialogueText: "Ahora la elecci\xF3n depende de vos: entregar o guardar las pruebas."
+  options:
+  - optionText: "Aqu\xED est\xE1n, conf\xEDo en usted."
+    nextDialogue: {fileID: 11400000, guid: b6928130e082c5b4ab2b42b126673f68, type: 2}
+    confianzaDelta: 2
+    sospechaDelta: 0
+  - optionText: "Prefiero guardarlas un poco m\xE1s antes de entregarlas."
+    nextDialogue: {fileID: 11400000, guid: b6928130e082c5b4ab2b42b126673f68, type: 2}
+    confianzaDelta: 1
+    sospechaDelta: 1
+  - optionText: Me las quedo hasta estar seguro.
+    nextDialogue: {fileID: 11400000, guid: b6928130e082c5b4ab2b42b126673f68, type: 2}
+    confianzaDelta: 0
+    sospechaDelta: 2
