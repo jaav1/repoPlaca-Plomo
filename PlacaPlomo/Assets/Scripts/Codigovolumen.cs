@@ -1,39 +1,40 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class CodigoVolumen : MonoBehaviour
 {
     public Slider Slider;
-    public float SliderValue;
     public Image ImageMute;
 
-    // Start is called before the first frame update
+    private float sliderValue;
+
     void Start()
     {
-        Slider.value = PlayerPrefs.GetFloat("VolumenAudio", 0.5f); //para que el valor del volumen se guarde
-        AudioListener.volume = Slider.value;
+        // Recupera el volumen guardado o usa 0.5 como valor por defecto
+        sliderValue = PlayerPrefs.GetFloat("VolumenAudio", 0.5f);
+        Slider.value = sliderValue;
+
+        // Aplica el volumen sin distorsión
+        AudioListener.volume = Mathf.Clamp(sliderValue, 0f, 1f);
+
         RevisarSiEstoyMute();
     }
 
     public void ChangeSlider(float valor)
     {
-        SliderValue = valor;
-        PlayerPrefs.SetFloat("VolumenAudio", SliderValue);
-        AudioListener.volume = SliderValue;
+        // Asegura que el valor esté entre 0 y 1
+        sliderValue = Mathf.Clamp(valor, 0f, 1f);
+        PlayerPrefs.SetFloat("VolumenAudio", sliderValue);
+
+        // Aplica el volumen
+        AudioListener.volume = sliderValue;
+
         RevisarSiEstoyMute();
     }
 
-    public void RevisarSiEstoyMute()
+    private void RevisarSiEstoyMute()
     {
-        if (SliderValue == 0)
-        {
-            ImageMute.enabled = true;
-        }
-        else
-        {
-            ImageMute.enabled = false;
-        }
+        // Activa la imagen de mute si el volumen es exactamente 0
+        ImageMute.enabled = sliderValue == 0f;
     }
 }
