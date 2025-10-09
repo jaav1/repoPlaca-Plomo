@@ -3,43 +3,36 @@ using System.Collections.Generic;
 using UnityEngine.UI;
 using TMPro;
 
-public class ChalkboardSolver : MonoBehaviour
+public class ChalkboardSolver1 : MonoBehaviour
 {
     // === ASIGNACIONES EN EL INSPECTOR ===
     [Header("UI References")]
     [SerializeField] private GameObject chalkboardUI; // El panel principal de la pizarra
-    [SerializeField] private Button buttonPlaca;
-    [SerializeField] private Button buttonPaquete;
-    [SerializeField] private Button buttonNota;
+    [SerializeField] private Button buttonRecibos;
+    [SerializeField] private Button buttonDocParroquia;
+    [SerializeField] private Button buttonLazaro;
+    [SerializeField] private Button buttonTaberna;
     [SerializeField] private TMP_Text feedbackText; // Texto para dar feedback (ej. "Conectado", "Incorrecto")
-
-    // Si tienes un script PlayerMovement, es bueno referenciarlo aquí:
-    [Header("Gameplay References")]
-    [SerializeField] private PlayerMovement playerMovement;
 
     [Header("Mission Settings")]
     [SerializeField] private string successStepId = "M2-01"; // Paso al que avanzar
-    [SerializeField] private string targetTriggerID = "NODE_Placa,NODE_Paquete,NODE_NotaNombres"; // Del CSV
+    [SerializeField] private string targetTriggerID = "NODE_Recibos,NODE_DocParroquia,NODE_Lazaro,NODE_Taberna"; // Del CSV
 
     // === Lógica de Conexión ===
     private readonly List<string> connectionSequence = new();
-    private const string CORRECT_SOLUTION = "NODE_Placa->NODE_Paquete->NODE_NotaNombres";
+    private const string CORRECT_SOLUTION = "NODE_Recibos->NODE_DocParroquia->NODE_Lazaro->NODE_Taberna";
+    // ^ Asegúrate de que esta sea la secuencia correcta que el jugador debe ingresar.
 
     private void Awake()
     {
         // Ocultar al inicio
         chalkboardUI.SetActive(false);
 
-        // Asignar los listeners de click
-        buttonPlaca.onClick.AddListener(() => AddNodeToSequence("NODE_Placa"));
-        buttonPaquete.onClick.AddListener(() => AddNodeToSequence("NODE_Paquete"));
-        buttonNota.onClick.AddListener(() => AddNodeToSequence("NODE_NotaNombres"));
-
-        // **OPCIONAL:** Buscar PlayerMovement si no está asignado en el Inspector
-        // if (playerMovement == null)
-        // {
-        //     playerMovement = MissionManager.I?.GetPlayerTransform()?.GetComponent<PlayerMovement>();
-        // }
+        // ASIGNACIÓN DE LISTENERS CORREGIDA:
+        buttonRecibos.onClick.AddListener(() => AddNodeToSequence("NODE_Recibos"));
+        buttonDocParroquia.onClick.AddListener(() => AddNodeToSequence("NODE_DocParroquia"));
+        buttonLazaro.onClick.AddListener(() => AddNodeToSequence("NODE_Lazaro"));
+        buttonTaberna.onClick.AddListener(() => AddNodeToSequence("NODE_Taberna"));
     }
 
     // Método llamado por los botones
@@ -54,7 +47,8 @@ public class ChalkboardSolver : MonoBehaviour
         connectionSequence.Add(nodeId);
         UpdateFeedbackUI();
 
-        if (connectionSequence.Count == 3)
+        // Ahora chequea por 4 nodos, ya que son 4 elementos
+        if (connectionSequence.Count == 4)
         {
             CheckSolution();
         }
@@ -74,8 +68,11 @@ public class ChalkboardSolver : MonoBehaviour
         {
             feedbackText.text = "¡CONEXIÓN EXITOSA! Las pistas coinciden.";
 
-            // Lógica de reportar éxito al MissionManager
+            // 1. OBTENER LA LISTA DE NODOS INDIVIDUALMENTE
+            // (targetTriggerID es "NODE_Recibos,NODE_DocParroquia,NODE_Lazaro,NODE_Taberna")
             string[] requiredNodes = targetTriggerID.Split(',');
+
+            // 2. Reportar cada nodo de forma individual
             foreach (string nodeId in requiredNodes)
             {
                 MissionManager.I?.ReportEvent(TriggerType.SolveGraph, nodeId.Trim());
@@ -95,27 +92,23 @@ public class ChalkboardSolver : MonoBehaviour
     public void ClearSequence()
     {
         connectionSequence.Clear();
-        feedbackText.text = "Secuencia borrada. Conecta las 3 pistas.";
+        feedbackText.text = "Secuencia borrada. Conecta las 4 pistas.";
     }
 
     public void ShowChalkboard()
     {
         ClearSequence();
         chalkboardUI.SetActive(true);
-
-        // Bloqueo de controles y cursor
+        // Desbloquear/Mostrar cursor al abrir la UI
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
-        if (playerMovement != null) playerMovement.enabled = false; // Deshabilita movimiento del jugador
     }
 
     public void HideChalkboard()
     {
         chalkboardUI.SetActive(false);
-
-        // Desbloqueo de controles y cursor
+        // Bloquear/Ocultar cursor al cerrar la UI para volver al gameplay
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
-        if (playerMovement != null) playerMovement.enabled = true; // Habilita movimiento del jugador
     }
 }

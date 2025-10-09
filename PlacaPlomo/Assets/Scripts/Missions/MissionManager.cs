@@ -247,6 +247,24 @@ public class MissionManager : MonoBehaviour
                 Debug.LogError("ChalkboardSolver no encontrado en la escena.");
             }
         }
+
+        if (current.StepId == "M2-08A")
+        {
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+
+            // ESTA LÍNEA ES LA CLAVE:
+            ChalkboardSolver1 solver = FindFirstObjectByType<ChalkboardSolver1>();
+
+            if (solver != null)
+            {
+                solver.ShowChalkboard();
+            }
+            else
+            {
+                Debug.LogError("ChalkboardSolver1 no encontrado en la escena. Asegúrate de que el objeto esté activo.");
+            }
+        }
     }
 
     private void ApplyFlags(string flagsRaw, bool add)
