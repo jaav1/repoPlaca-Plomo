@@ -15,6 +15,7 @@ public class MissionManager : MonoBehaviour
 
     // Estado
     private readonly Dictionary<string, MissionStep> stepsById = new();
+    private MissionData currentMission;
     private MissionStep current;
     private readonly HashSet<string> flags = new();  // SIMPLE: guarda flags presentes (FLAG=1)
     private float suspicion = 0f;
@@ -30,6 +31,8 @@ public class MissionManager : MonoBehaviour
     private Coroutine successCheckRoutine;
 
     private VehicleInteraction vehicleInteractionRef;
+
+    private EndGamePanelController endGamePanel;
 
     #region Singleton simple (opcional)
     public static MissionManager I { get; private set; }
@@ -61,6 +64,12 @@ public class MissionManager : MonoBehaviour
     private void Start()
     {
         GoToStep(startingStepId);
+
+        endGamePanel = FindFirstObjectByType<EndGamePanelController>();
+        if (endGamePanel == null)
+        {
+            Debug.LogError("No se encontró el EndGamePanelController en la escena.");
+        }
     }
 
     private void LoadCsv()
@@ -156,6 +165,14 @@ public class MissionManager : MonoBehaviour
             return;
         }
         current = s;
+
+        if (currentMission == null || currentMission.MissionId != s.Mission)
+        {
+            // Creamos o actualizamos la misión con la información mínima.
+            currentMission = new MissionData(s.Mission);
+            Debug.Log($"[MISSION MANAGER] Iniciando/Cambiando a misión: {s.Mission}");
+        }
+
         _satisfiedForThisStep.Clear();
         foreach (var r in current.Requirements) r.Completed = false;
 
@@ -453,17 +470,46 @@ public class MissionManager : MonoBehaviour
             if (objectiveHUD) objectiveHUD.SetText("Misión actual completa.");
             return;
         }
-        // llamamos al CinematicManager para que reproduzca la introducción 
-        // de la nueva misión y luego llame a GoToStep.
+
+        // LÓGICA DE FIN DE MISIÓN
+        if (nextId.EndsWith("END"))
+        {
+            // Usamos el operador ternario para acceder a MissionId solo si currentMission no es null.
+            string missionId = (currentMission != null) ? currentMission.MissionId : "Desconocida";
+
+            // La línea que causaba error ahora es segura:
+            Debug.Log($"¡Misión {missionId} completada! (Paso final: {nextId})");
+
+            ShowEndScreen();
+            return;
+        }
+        // ----------------------------------------------------------------------
+
+        // Lógica para avanzar a un paso normal
 
         if (CinematicManager.I != null)
         {
+            // llamamos al CinematicManager para que reproduzca la introducción
+            // de la nueva misión y luego llame a GoToStep.
             CinematicManager.I.StartMissionIntro(nextId);
         }
         else
         {
             // Fallback: si el CinematicManager no está listo, vamos directo al paso.
             GoToStep(nextId);
+        }
+    }
+
+    private void ShowEndScreen()
+    {
+        if (endGamePanel != null)
+        {
+            // Llamamos al script de UI para que muestre el panel
+            endGamePanel.DisplayEndScreen();
+        }
+        else
+        {
+            Debug.LogError("No se puede mostrar la pantalla final. Falta la referencia a EndGamePanelController.");
         }
     }
 

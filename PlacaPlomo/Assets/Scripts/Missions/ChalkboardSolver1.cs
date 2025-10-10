@@ -79,7 +79,7 @@ public class ChalkboardSolver1 : MonoBehaviour
             }
 
             // Oculta la pizarra después de un momento
-            Invoke(nameof(HideChalkboard), 2.0f);
+            Invoke(nameof(HideChalkboard), 0.5f);
 
         }
         else
