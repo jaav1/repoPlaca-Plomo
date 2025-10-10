@@ -12,15 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
   m_Name: Respuesta5
   m_EditorClassIdentifier: 
-  targetMissionID: NPC_Claudia
+  targetMissionID: NPC_PadreLazaro
   speakerName: Padre Lazaro
-  dialogueText: "Sea cual sea tu decisi\xF3n, recuerda que esto puede cambiar todo."
+  dialogueText: "Entonces dime, Ray\u2026 \xBFqu\xE9 har\xE1s ahora? \xBFRevelar\xE1s
+    lo que sabes, o esperar\xE1s a entenderlo todo?"
   options:
-  - optionText: Confrontar
-    nextDialogue: {fileID: 0}
+  - optionText: "Ya vi suficiente. No me ir\xE9 sin respuestas.(Confrontar)"
+    nextDialogue: {fileID: 11400000, guid: da2d2a388086ef042b2e4764bb29bbf0, type: 2}
     confianzaDelta: 0
     sospechaDelta: 5
-  - optionText: Esperar
-    nextDialogue: {fileID: 0}
+  - optionText: "A\xFAn no tengo todas las piezas\u2026 lo ver\xE9 en otra ocasi\xF3n.(Esperar)"
+    nextDialogue: {fileID: 11400000, guid: da2d2a388086ef042b2e4764bb29bbf0, type: 2}
     confianzaDelta: 0
     sospechaDelta: 1

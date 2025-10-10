@@ -10,21 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
-  m_Name: Respuesta1
+  m_Name: Respuesta2
   m_EditorClassIdentifier: 
   targetMissionID: NPC_PadreLazaro
   speakerName: Padre Lazaro
-  dialogueText: "\xBFConf\xEDas en m\xED o quieres jugar a los esp\xEDas?"
+  dialogueText: "Te adentras en caminos peligrosos, Ray. Los hombres detr\xE1s de
+    esto no perdonan a los curiosos."
   options:
-  - optionText: "Conf\xEDo en usted. Solo quiero ser honesto."
-    nextDialogue: {fileID: 11400000, guid: 32caacb59b2acb341b557a32b48a4215, type: 2}
+  - optionText: "Ya es tarde para dar marcha atr\xE1s."
+    nextDialogue: {fileID: 11400000, guid: ba36fd70b37312c44ba9f63152b2cc73, type: 2}
     confianzaDelta: 2
     sospechaDelta: 0
-  - optionText: "Depende de c\xF3mo me trate, decidir\xE9 si conf\xEDo."
-    nextDialogue: {fileID: 11400000, guid: 32caacb59b2acb341b557a32b48a4215, type: 2}
+  - optionText: "No soy el \xFAnico que busca justicia."
+    nextDialogue: {fileID: 11400000, guid: ba36fd70b37312c44ba9f63152b2cc73, type: 2}
     confianzaDelta: 1
     sospechaDelta: 1
-  - optionText: "No me trate como ni\xF1o, diga lo que sabe."
-    nextDialogue: {fileID: 11400000, guid: 21b56d89cb7fd58448173d5f82233e85, type: 2}
+  - optionText: "\xBFY usted a qui\xE9n teme exactamente, padre?"
+    nextDialogue: {fileID: 11400000, guid: b438dff194b9145469d8126765de39fd, type: 2}
     confianzaDelta: 0
     sospechaDelta: 2

@@ -10,22 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
-  m_Name: Hablar con Claudia
+  m_Name: Hablar con Bruno
   m_EditorClassIdentifier: 
   targetMissionID: NPC_Bruno
   speakerName: Bruno
-  dialogueText: "Veo que ten\xE9s algo que me pertenece\u2026 \xBFqui\xE9n te lo
-    dio?"
+  dialogueText: "(secando un vaso con desgano) \u201CNo eres de por aqu\xED, \xBFverdad?
+    La gente nueva no suele entrar a este sitio sin motivo.\u201D\n"
   options:
-  - optionText: "No quiero problemas, solo entregarle la informaci\xF3n."
+  - optionText: "Solo busco un trago y algo de informaci\xF3n."
     nextDialogue: {fileID: 11400000, guid: b3394f87113cd7e48b88a482bc68451e, type: 2}
     confianzaDelta: 2
     sospechaDelta: 0
-  - optionText: Eso no importa, lo importante es que usted sepa.
+  - optionText: "No tengo por qu\xE9 darte explicaciones"
     nextDialogue: {fileID: 11400000, guid: b3394f87113cd7e48b88a482bc68451e, type: 2}
+    confianzaDelta: 0
+    sospechaDelta: 3
+  - optionText: "Depende de qui\xE9n pregunte."
+    nextDialogue: {fileID: 11400000, guid: ef3058c5ca8979c448c2ae2d99d067a3, type: 2}
     confianzaDelta: 1
     sospechaDelta: 1
-  - optionText: "S\xE9 que usted quer\xEDa esto en secreto, d\xEDgame todo."
-    nextDialogue: {fileID: 11400000, guid: ef3058c5ca8979c448c2ae2d99d067a3, type: 2}
-    confianzaDelta: 0
-    sospechaDelta: 2
