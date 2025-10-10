@@ -12,20 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1354da8d1ceb43c42b699e66199e1f1f, type: 3}
   m_Name: Respuesta4
   m_EditorClassIdentifier: 
-  targetMissionID: NPC_Claudia
+  targetMissionID: NPC_PadreLazaro
   speakerName: Padre Lazaro
-  dialogueText: "Bien, ahora depende de vos: \xBFentregar\xE1s las pruebas o las
-    guardar\xE1s?"
+  dialogueText: "Si destruyes lo que se ha construido, los inocentes pagar\xE1n.
+    \xBFEso quieres?"
   options:
-  - optionText: "Aqu\xED est\xE1n. Haga lo correcto."
+  - optionText: Quiero justicia, no ruina.
     nextDialogue: {fileID: 11400000, guid: 6ff5d0da1ff6b6d479100b53bab1928c, type: 2}
-    confianzaDelta: 2
+    confianzaDelta: 3
     sospechaDelta: 0
-  - optionText: Prefiero asegurarme antes de entregarlas.
+  - optionText: No hay inocentes cuando todos callan.
     nextDialogue: {fileID: 11400000, guid: 6ff5d0da1ff6b6d479100b53bab1928c, type: 2}
     confianzaDelta: 1
     sospechaDelta: 1
-  - optionText: No me fio de nadie, me las quedo.
+  - optionText: El miedo no es excusa para seguir mintiendo.
     nextDialogue: {fileID: 11400000, guid: 3c24ce88389470046a7ed132c33a1a84, type: 2}
     confianzaDelta: 0
     sospechaDelta: 2

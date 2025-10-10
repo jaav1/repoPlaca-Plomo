@@ -14,18 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetMissionID: NPC_PadreLazaro
   speakerName: Padre Lazaro
-  dialogueText: "Si me lo das, decidir\xE9 c\xF3mo usarlo\u2026 y podr\xEDa beneficiarte
-    o perjudicarte"
+  dialogueText: "El dinero que llega de la taberna\u2026 no es para m\xED. Es para
+    mantener vivo este barrio."
   options:
-  - optionText: "Conf\xEDo en su juicio, haga lo correcto."
+  - optionText: Pero viene manchado. No puede limpiar la miseria con sangre.
     nextDialogue: {fileID: 11400000, guid: 5c94f0879245c104f8ae9e6260ce67d0, type: 2}
     confianzaDelta: 2
     sospechaDelta: 0
-  - optionText: Solo quiero que nadie salga lastimado
+  - optionText: "\xBFY a cambio de qu\xE9, silencio?"
     nextDialogue: {fileID: 11400000, guid: 5c94f0879245c104f8ae9e6260ce67d0, type: 2}
     confianzaDelta: 1
     sospechaDelta: 1
-  - optionText: "Si lo entrego, \xBFy si me traiciona?"
+  - optionText: "As\xED que usted tambi\xE9n forma parte del trato."
     nextDialogue: {fileID: 11400000, guid: 5925b53fdaff08a429496958768ad86f, type: 2}
     confianzaDelta: 0
     sospechaDelta: 2

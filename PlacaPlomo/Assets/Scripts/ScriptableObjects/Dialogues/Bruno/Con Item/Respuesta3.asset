@@ -14,18 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetMissionID: NPC_Bruno
   speakerName: Bruno
-  dialogueText: "Si me lo das, decidir\xE9 c\xF3mo usarlo\u2026 y podr\xEDa beneficiarte
-    o perjudicarte"
+  dialogueText: "Solo me pidi\xF3 una botella y un nombre. Dijo que esa noche lo
+    seguir\xEDan."
   options:
-  - optionText: "Conf\xEDo en su juicio, haga lo correcto."
+  - optionText: "\xBFQui\xE9n lo segu\xEDa?"
     nextDialogue: {fileID: 11400000, guid: cd880b8f6f529084f9ed69a9073f26f0, type: 2}
     confianzaDelta: 2
     sospechaDelta: 0
-  - optionText: Solo quiero que nadie salga lastimado
+  - optionText: Debiste haberlo detenido.
     nextDialogue: {fileID: 11400000, guid: cd880b8f6f529084f9ed69a9073f26f0, type: 2}
-    confianzaDelta: 1
-    sospechaDelta: 1
-  - optionText: "Si lo entrego, \xBFy si me traiciona?"
-    nextDialogue: {fileID: 11400000, guid: 5925b53fdaff08a429496958768ad86f, type: 2}
     confianzaDelta: 0
-    sospechaDelta: 2
+    sospechaDelta: 3
+  - optionText: "\xBFTen\xEDa miedo?"
+    nextDialogue: {fileID: 11400000, guid: 5925b53fdaff08a429496958768ad86f, type: 2}
+    confianzaDelta: 2
+    sospechaDelta: 1

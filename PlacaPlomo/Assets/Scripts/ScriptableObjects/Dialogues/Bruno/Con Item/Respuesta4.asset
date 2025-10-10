@@ -14,18 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetMissionID: NPC_Bruno
   speakerName: Bruno
-  dialogueText: "Bien, ahora depende de vos: \xBFentregar\xE1s las pruebas o las
-    guardar\xE1s?"
+  dialogueText: "Aqu\xED todos tienen miedo, incluido yo. Pero t\xFA pareces distinto...
+    \xBFde verdad quieres saber la verdad?"
   options:
-  - optionText: "Aqu\xED est\xE1n. Haga lo correcto."
+  - optionText: "Por eso estoy aqu\xED. No pienso huir."
     nextDialogue: {fileID: 11400000, guid: 17223a5c8b9105f4dad6db2309212b3c, type: 2}
     confianzaDelta: 2
     sospechaDelta: 0
-  - optionText: Prefiero asegurarme antes de entregarlas.
+  - optionText: Eso depende de lo que gane con ella.
     nextDialogue: {fileID: 11400000, guid: 17223a5c8b9105f4dad6db2309212b3c, type: 2}
     confianzaDelta: 1
     sospechaDelta: 1
-  - optionText: No me fio de nadie, me las quedo.
+  - optionText: La verdad siempre tiene un precio.
     nextDialogue: {fileID: 11400000, guid: 17223a5c8b9105f4dad6db2309212b3c, type: 2}
-    confianzaDelta: 0
-    sospechaDelta: 2
+    confianzaDelta: 2
+    sospechaDelta: 1
