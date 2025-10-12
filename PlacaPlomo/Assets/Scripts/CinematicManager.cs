@@ -31,9 +31,7 @@ public class CinematicManager : MonoBehaviour
 
     private void Start()
     {
-        // Esto asume que tu MissionManager tiene el startingStepId configurado a M1-01.
-        // Iniciamos la primera cinemática del juego (ej. la de Misión 1).
-        StartMissionIntro("M1-01");
+        //
     }
 
     /// <summary>

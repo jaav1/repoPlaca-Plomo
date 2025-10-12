@@ -65,4 +65,10 @@ public class SistemaGuardado : MonoBehaviour
             return null;
         }
     }
+
+    public bool DoesSaveFileExist()
+    {
+        // Verifica si el archivo de guardado existe en la ruta definida.
+        return File.Exists(rutaArchivo);
+    }
 }

@@ -4,6 +4,7 @@ using System.Collections;
 using UnityEngine;
 using TMPro; // Para HUD
 
+[DefaultExecutionOrder(-100)]
 public class MissionManager : MonoBehaviour
 {
     [Header("Data")]
@@ -42,6 +43,8 @@ public class MissionManager : MonoBehaviour
         I = this;
         DontDestroyOnLoad(gameObject);
 
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;  
+
         // *** INICIALIZACIÓN DE REFERENCIAS ***
         enemyObjRef = GameObject.Find("E_Perseguidor");
 
@@ -61,14 +64,110 @@ public class MissionManager : MonoBehaviour
     }
     #endregion
 
+    private void OnDestroy()
+    {
+        // Desuscribirse para evitar errores
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        if (scene.name == "PrincipalScene")
+        {
+            // Esto se ejecutará inmediatamente después de que la escena esté cargada.
+            // Ahora el MissionManager y el GameManager compiten en el mismo evento,
+            // pero el MissionManager tiene mayor prioridad por el [DefaultExecutionOrder(-100)].
+
+            // Busca las referencias de la escena (HUD, Panel, etc.)
+            FindSceneReferences();
+
+            // Carga los datos de misión (¡DEBE IR PRIMERO!)
+            LoadMissionStateFromFlowManager();
+        }
+    }
+
+    [System.Serializable]
+    public class MissionProgress
+    {
+        public string CurrentStepId;
+        public List<string> ActiveFlags; // Usamos List<string> para que JsonUtility pueda serializarlo
+        public float CurrentSuspicion;
+    }
+
+    private void FindSceneReferences()
+    {
+        // BUSCAR EL HUD
+        objectiveHUD = FindFirstObjectByType<ObjectiveHUD>();
+        if (objectiveHUD == null)
+        {
+            // PON ATENCIÓN A SI ESTO SE IMPRIME
+            Debug.LogError("ObjectiveHUD NO ENCONTRADO en la escena. ¿Está activo el Canvas en la escena de juego?");
+        }
+        else
+        {
+            Debug.Log("ObjectiveHUD encontrado y la referencia reestablecida.");
+        }
+
+        // Y el panel final, que también se pierde
+        endGamePanel = FindFirstObjectByType<EndGamePanelController>();
+    }
+
     private void Start()
     {
-        GoToStep(startingStepId);
+        //GoToStep(startingStepId);
 
         endGamePanel = FindFirstObjectByType<EndGamePanelController>();
         if (endGamePanel == null)
         {
             Debug.LogError("No se encontró el EndGamePanelController en la escena.");
+        }
+
+        //LoadMissionStateFromFlowManager();
+    }
+
+    public void LoadMissionStateFromFlowManager()
+    {
+        FindSceneReferences();
+
+        DatosJugador loadedData = null;
+
+        // 1. Intentar obtener los datos del gestor de flujo
+        if (GameFlowManager.Instance != null)
+        {
+            Debug.Log("[MM] Intentando obtener datos del GameFlowManager...");
+            // ESTA LLAMADA DEBE SER LA ÚNICA QUE CONSUME LA DATA DEL FLOW MANAGER
+            loadedData = GameFlowManager.Instance.GetLoadedData();
+        }
+
+        // 2. Si hay datos, restaurar el estado, si no, empezar nueva misión
+        if (loadedData != null && loadedData.ProgresoMision != null)
+        {
+            // CARGA
+            Debug.Log($"[MM] Datos de misión cargados. Aplicando progreso: {loadedData.ProgresoMision.CurrentStepId}");
+            ApplyProgressData(loadedData.ProgresoMision);
+
+            if (GameManager.instancia != null)
+            {
+                // ¡NUEVA FUNCIÓN! Le decimos al GameManager que aplique la data
+                GameManager.instancia.ApplyLoadedData(loadedData);
+            }
+        }
+        else
+        {
+            // PARTIDA NUEVA (esto es lo que se está ejecutando ahora)
+            Debug.Log("[MissionManager] No hay datos cargados. Iniciando misión desde el inicio.");
+
+            // *** AHORA LLAMAMOS AL CINEMATICMANAGER SOLO AQUÍ ***
+            if (CinematicManager.I != null)
+            {
+                // El CinematicManager inicia la cinemática, y LUEGO LLAMA a GoToStep(startingStepId)
+                CinematicManager.I.StartMissionIntro(startingStepId);
+            }
+            else
+            {
+                // Fallback si no hay CinematicManager (inicia la misión sin cinemática)
+                GoToStep(startingStepId);
+            }
         }
     }
 
@@ -139,6 +238,37 @@ public class MissionManager : MonoBehaviour
         Debug.Log($"MissionManager: cargadas {stepsById.Count} filas del CSV.");
     }
 
+    // Metodo GENERAR el objeto de datos de la misión
+    public MissionManager.MissionProgress GetProgressData()
+    {
+        return new MissionProgress
+        {
+            CurrentStepId = current?.StepId ?? startingStepId,
+            ActiveFlags = new List<string>(flags),
+            CurrentSuspicion = suspicion
+        };
+    }
+
+    // Metodo APLICAR el objeto de datos de la misión (llamado durante la carga)
+    public void ApplyProgressData(MissionProgress data)
+    {
+        if (data == null) return;
+
+        // Limpiar y aplicar Flags
+        flags.Clear();
+        foreach (var flag in data.ActiveFlags)
+        {
+            flags.Add(flag);
+        }
+
+        suspicion = data.CurrentSuspicion;
+
+        // Restaurar el paso actual llamando a GoToStep
+        GoToStep(data.CurrentStepId);
+
+        Debug.Log($"[MissionManager] Estado restaurado. Step: {data.CurrentStepId}, Flags: {flags.Count}, Suspicion: {suspicion:F2}");
+    }
+
     // Método para obtener el Transform que debe escapar
     public Transform GetChaseTarget()
     {
@@ -166,6 +296,12 @@ public class MissionManager : MonoBehaviour
         }
         current = s;
 
+        if (objectiveHUD)
+        {
+            objectiveHUD.SetText(current.OnScreenText);
+            Debug.Log($"[HUD] Actualizado a: {current.OnScreenText}"); // <-- Añade este Debug
+        }
+
         if (currentMission == null || currentMission.MissionId != s.Mission)
         {
             // Creamos o actualizamos la misión con la información mínima.
@@ -186,9 +322,6 @@ public class MissionManager : MonoBehaviour
         // Flags
         ApplyFlags(current.AddsFlagsRaw, add: true);
         ApplyFlags(current.RemovesFlagsRaw, add: false);
-
-        // HUD
-        if (objectiveHUD) objectiveHUD.SetText(current.OnScreenText);
 
         Debug.Log($"[MISSION] {current.StepId} ? {current.StepTitle}");
 
@@ -563,7 +696,7 @@ public class MissionManager : MonoBehaviour
             }
             else
             {
-                // (Tu lógica de error de referencia que ya está funcionando)
+                //(Tu lógica de error de referencia que ya está funcionando)
                 if (enemyObjRef == null) Debug.LogError("CheckSuccessCondition: E_Perseguidor es NULL. Fallo de referencia.");
                 if (playerTransformRef == null) Debug.LogError("CheckSuccessCondition: Player es NULL. Fallo de referencia.");
                 return false;

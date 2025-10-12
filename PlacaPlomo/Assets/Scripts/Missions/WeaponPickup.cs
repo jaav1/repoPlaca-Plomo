@@ -13,6 +13,10 @@ public class WeaponPickup : MonoBehaviour
     // Objeto vacío en la jerarquía del jugador donde se instanciará el arma de FP
     public Transform weaponHoldPoint;
 
+    [Header("Configuración de Transformación")]
+    [Tooltip("Escala LOCAL deseada para el arma una vez equipada.")]
+    public Vector3 equippedLocalScale = new Vector3(20f, 20f, 3f);
+
     // Referencia al PlayerShooting.cs para activarlo
     private PlayerShooting playerShootingScript;
 
@@ -51,17 +55,26 @@ public class WeaponPickup : MonoBehaviour
             return;
         }
 
-        // 1. Instanciar y equipar el modelo 3D
-        Instantiate(fpWeaponPrefab, weaponHoldPoint.position, weaponHoldPoint.rotation, weaponHoldPoint);
+        // 1. Instanciar el modelo 3D sin padre aún
+        GameObject newWeapon = Instantiate(fpWeaponPrefab);
 
-        // 2. Activar la funcionalidad de disparo (asumiendo que está inactiva por defecto)
+        // 2. Asignar el punto de agarre como padre
+        newWeapon.transform.SetParent(weaponHoldPoint);
+
+        // 3. Resetear la posición, rotación y ESCALA LOCAL
+        newWeapon.transform.localPosition = Vector3.zero;
+        newWeapon.transform.localRotation = Quaternion.identity;
+
+        // La línea que soluciona el problema de la deformación:
+        newWeapon.transform.localScale = equippedLocalScale;
+
+        // 4. Activar la funcionalidad de disparo (asumiendo que está inactiva por defecto)
         playerShootingScript.enabled = true;
 
-        // 3. Notificar a la Misión si el arma es un objetivo (Opcional, pero bueno para misiones)
-        // Aunque M2-07A no requiere 'recoger' el arma para avanzar, podríamos añadir la lógica si el CSV lo necesitara:
+        // 5. Notificar a la Misión si el arma es un objetivo (Opcional, pero bueno para misiones)
         // MissionManager.I?.ReportEvent(TriggerType.Pickup, weaponItemId);
 
-        // 4. Ocultar UI y destruir el objeto de recogida en la escena
+        // 6. Ocultar UI y destruir el objeto de recogida en la escena
         pickupTextUI?.HideText();
         Destroy(gameObject);
     }

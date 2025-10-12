@@ -4,13 +4,13 @@ using UnityEngine;
 // [System.Serializable] si planeas usarlo en el Inspector o guardarlo
 public class MissionData
 {
-    // El ID principal de la misión (ej. "M2")
+    // El ID principal de la misi?n (ej. "M2")
     public string MissionId;
 
-    // Opcional: El título completo (ej. "El Secreto de la Iglesia")
+    // Opcional: El t?tulo completo (ej. "El Secreto de la Iglesia")
     public string MissionTitle;
 
-    // Opcional: Lista de todos los pasos (esto se haría en una implementación más compleja)
+    // Opcional: Lista de todos los pasos (esto se har?a en una implementaci?n m?s compleja)
     // public List<MissionStep> Steps;
 
     // CONSTRUCTOR SIMPLE:

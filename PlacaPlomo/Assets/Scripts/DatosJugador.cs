@@ -18,6 +18,8 @@ public class DatosJugador
 
     // Datos del inventario, ahora como una lista de páginas
     public List<InventarioPaginaDatos> inventario;
+
+    public MissionManager.MissionProgress ProgresoMision;
 }
 
 [Serializable]

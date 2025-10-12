@@ -48,6 +48,22 @@ public class GameManager : MonoBehaviour
         // Solo ejecuta la lógica de carga si la escena es la del juego principal
         if (scene.name == "PrincipalScene")
         {
+            // 1. REANUDAR EL JUEGO (Necesario si el MainMenu lo pausó)
+            Time.timeScale = 1f; // Asegura que el juego esté corriendo
+
+            // 2. BUSCAR Y HABILITAR LOS CONTROLES DEL JUGADOR
+            PlayerMovement playerMovement = FindFirstObjectByType<PlayerMovement>();
+            if (playerMovement != null)
+            {
+                // ¡ESTA LÍNEA DEBE EXISTIR en tu PlayerMovement!
+                playerMovement.EnableControls();
+                Debug.Log("Controles del jugador habilitados al cargar la escena.");
+            }
+            else
+            {
+                Debug.LogError("PlayerMovement no encontrado para habilitar controles.");
+            }
+
             escenaActual = scene.name;
             Debug.Log("Escena del juego cargada. Iniciando carga de datos...");
 
@@ -58,7 +74,7 @@ public class GameManager : MonoBehaviour
                 Debug.LogError("No se encontró el objeto con la etiqueta 'HUD'.");
             }
 
-            CargarAhora();
+            //CargarAhora();
         }
         else
         {
@@ -67,6 +83,35 @@ public class GameManager : MonoBehaviour
             {
                 objetosRecogidos.Clear();
             }
+        }
+    }
+
+    // Recibe los datos cargados desde el MissionManager
+    public void ApplyLoadedData(DatosJugador datosGuardados)
+    {
+        if (datosGuardados != null)
+        {
+            Debug.Log("[GameManager] Aplicando estado y inventario desde MissionManager (que cargó del GameFlowManager).");
+
+            this.empatia = datosGuardados.empatia;
+            this.sospecha = datosGuardados.sospecha;
+            this.escenaActual = datosGuardados.escenaActual;
+            this.confianzaMendoza = datosGuardados.confianzaMendoza;
+            this.rayEmpatia = datosGuardados.rayEmpatia;
+            this.rayFrialdad = datosGuardados.rayFrialdad;
+            this.tension = datosGuardados.tension;
+            this.objetosRecogidos = datosGuardados.objetosRecogidos;
+
+            inventario = FindFirstObjectByType<RadialInventoryManager>();
+            if (inventario != null)
+            {
+                // Ahora se carga la nueva lista de datos del inventario.
+                inventario.SetInventoryDataFromLoad(datosGuardados.inventario);
+            }
+
+            EliminarObjetosRecogidos();
+
+            // CargarAhora() ya no existe o está modificado para ser solo un Fallback.
         }
     }
 
@@ -132,12 +177,30 @@ public class GameManager : MonoBehaviour
         Debug.Log("Datos guardados correctamente.");
     }
 
-    public void CargarAhora()
+    /*private void CargarAhora()
     {
-        DatosJugador datosGuardados = SistemaGuardado.instancia.CargarDatos();
+        // AHORA: Intentamos obtener los datos del contenedor temporal GameFlowManager.
+        // Solo si estamos cargando una partida, el GameFlowManager tendrá datos.
+        DatosJugador datosGuardados = null;
+
+        if (GameFlowManager.Instance != null)
+        {
+            // Usamos GetLoadedData. Nota: ESTO LE QUITA LOS DATOS AL GameFlowManager.
+            // Si otro script ya lo llamó, este será null.
+            datosGuardados = GameFlowManager.Instance.GetLoadedData();
+
+            // Opcional: Si quieres que el MissionManager sea el único que "roba" los datos,
+            // puedes usar una versión que no borre la data:
+            // datosGuardados = GameFlowManager.Instance.PeekLoadedData();
+
+            // Pero, para simplificar, usaremos GetLoadedData, y la *prioridad* la tendrá el MissionManager.
+        }
 
         if (datosGuardados != null)
         {
+            Debug.Log("[GameManager] Cargando estado desde GameFlowManager...");
+
+            // 1. CARGA DE ESTADO DEL JUGADOR
             this.empatia = datosGuardados.empatia;
             this.sospecha = datosGuardados.sospecha;
             this.escenaActual = datosGuardados.escenaActual;
@@ -147,16 +210,26 @@ public class GameManager : MonoBehaviour
             this.tension = datosGuardados.tension;
             this.objetosRecogidos = datosGuardados.objetosRecogidos;
 
+            // 2. CARGA DE INVENTARIO
             inventario = FindFirstObjectByType<RadialInventoryManager>();
             if (inventario != null)
             {
-                // Ahora se carga la nueva lista de datos del inventario.
                 inventario.SetInventoryDataFromLoad(datosGuardados.inventario);
             }
 
+            // 3. ELIMINAR OBJETOS
             EliminarObjetosRecogidos();
+
+            // IMPORTANTE: NO TOCAMOS datosGuardados.ProgresoMision.
+            // El MissionManager se encargará de ello.
         }
-    }
+        else
+        {
+            // Esto ocurrirá si es partida nueva o si otro script (MissionManager)
+            // ya llamó a GetLoadedData.
+            Debug.Log("[GameManager] Sin datos de carga disponibles. Iniciando con estado predeterminado.");
+        }
+    }*/
 
     // MÉTODO para eliminar los objetos de la escena
     private void EliminarObjetosRecogidos()
